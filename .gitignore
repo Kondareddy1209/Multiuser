@@ -1,0 +1,35 @@
+# Dependencies and generated output
+node_modules/
+dist/
+.pnpm-store/
+
+# Environment files: commit only the placeholder template
+.env
+.env.*
+!.env.example
+
+# Credentials and private keys/certificates
+.npmrc
+credentials/
+secrets/
+credentials*
+secrets*
+*service_role*
+*service-role*
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.mobileprovision
+
+# Browser profiles and visual/debug artifacts from local UI checks
+.chrome-*/
+.roomcode-chrome-profile*/
+.chrome-*.err
+.chrome-*.out
+.chrome-*.html
+.chrome-*.log
+.roomcode-layout*
+_codex_write_check.tmp
