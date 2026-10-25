@@ -4,6 +4,7 @@
 [![Vite](https://img.shields.io/badge/Vite-6.0.7-646CFF?logo=vite)](https://vitejs.dev/)
 [![Tests](https://img.shields.io/badge/Tests-33%20Passed-brightgreen)](tests/)
 [![JavaScript](https://img.shields.io/badge/ESM-JavaScript-F7DF1E?logo=javascript)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+[![GitHub](https://img.shields.io/badge/GitHub-Kondareddy1209%2FMultiuser-181717?logo=github)](https://github.com/Kondareddy1209/Multiuser)
 
 Treasure Plots is a real-time, browser-based multiplayer strategy and party game. Up to eight players gather in an anonymous clearing, start with five coins, and compete across three rounds of simultaneous secret decisions. 
 
