@@ -1,0 +1,1472 @@
+/* ==========================================================================
+   Treasure Plots — Cinematic 3D Animation Styles
+   Appended after style.css. Zero new external dependencies.
+   Uses CSS 3D transforms, hardware-accelerated @keyframes, and custom properties.
+   All animations respect prefers-reduced-motion at the bottom of this file.
+   ========================================================================== */
+
+:root {
+  --gold-glow: #d5b45b;
+  --gold-highlight: #fdf3c6;
+  --shield-blue: #88c8d8;
+  --trap-amber: #d4c860;
+  --danger-red: #e8a090;
+  --treasure-green: #83c99a;
+  --chest-brown: #7a4f2a;
+  --chest-dark: #5a3515;
+  --chest-gold: #c8922a;
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ------------------------------------------------------------------
+   1. IMPROVED WAITING ANIMATION (Requirement 1)
+   ------------------------------------------------------------------ */
+
+.tp-waiting-card-3d {
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 20%, #1c3022 0%, #122218 80%);
+  border: 1px solid rgba(213, 180, 91, 0.22);
+  box-shadow: 0 16px 48px rgba(6, 19, 11, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* 3D Stage for the floating chest and orbiting coins */
+.tp-waiting-stage {
+  position: relative;
+  width: 100%;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 700px;
+  transform-style: preserve-3d;
+  margin-bottom: 4px;
+}
+
+/* Soft ambient radial aura */
+.tp-waiting-aura {
+  position: absolute;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(213, 180, 91, 0.18) 0%, rgba(131, 201, 154, 0.08) 45%, transparent 70%);
+  filter: blur(8px);
+  animation: tp-aura-breathe 3.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes tp-aura-breathe {
+  0%, 100% { transform: scale(0.95); opacity: 0.65; }
+  50%       { transform: scale(1.2);  opacity: 1; }
+}
+
+/* Ambient Sparkle Dots */
+.tp-ambient-sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.tp-sparkle {
+  position: absolute;
+  font-size: 11px;
+  color: #fce88a;
+  text-shadow: 0 0 8px rgba(252, 232, 138, 0.8);
+  animation: tp-sparkle-float 2.8s ease-in-out infinite;
+  opacity: 0;
+}
+
+.tp-sparkle.sp1 { top: 18%; left: 24%; animation-delay: 0.2s; }
+.tp-sparkle.sp2 { top: 22%; right: 26%; animation-delay: 1.1s; }
+.tp-sparkle.sp3 { bottom: 20%; left: 32%; animation-delay: 1.8s; font-size: 9px; }
+.tp-sparkle.sp4 { bottom: 25%; right: 30%; animation-delay: 0.7s; font-size: 10px; }
+
+@keyframes tp-sparkle-float {
+  0%   { opacity: 0; transform: translateY(4px) scale(0.7); }
+  50%  { opacity: 0.85; transform: translateY(-4px) scale(1.15); }
+  100% { opacity: 0; transform: translateY(-8px) scale(0.6); }
+}
+
+/* Floating 3D Treasure Chest / Vault with subtle 3D tilt */
+.tp-waiting-chest-3d {
+  position: relative;
+  width: 58px;
+  height: 44px;
+  transform-style: preserve-3d;
+  transform: rotateX(14deg) rotateY(-18deg) rotateZ(2deg);
+  animation: tp-chest-float-idle 3s ease-in-out infinite;
+  z-index: 3;
+}
+
+@keyframes tp-chest-float-idle {
+  0%, 100% {
+    transform: rotateX(14deg) rotateY(-18deg) rotateZ(2deg) translateY(0);
+  }
+  50% {
+    transform: rotateX(16deg) rotateY(-14deg) rotateZ(3deg) translateY(-8px);
+  }
+}
+
+.tp-chest-mini-body {
+  position: absolute;
+  width: 58px;
+  height: 32px;
+  bottom: 0;
+  transform-style: preserve-3d;
+}
+
+.tp-chest-mini-face {
+  position: absolute;
+  background: var(--chest-brown);
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+}
+
+.tp-mini-front {
+  width: 58px;
+  height: 32px;
+  transform: translateZ(16px);
+  background: linear-gradient(180deg, #8a572a 0%, #633917 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0 0 3px 3px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.tp-mini-front::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 42%;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, #916c1c, var(--chest-gold), #916c1c);
+  box-shadow: 0 0 6px rgba(200, 146, 42, 0.5);
+}
+
+.tp-vault-icon {
+  font-size: 16px;
+  position: relative;
+  z-index: 2;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+}
+
+.tp-mini-back {
+  width: 58px;
+  height: 32px;
+  transform: translateZ(-16px) rotateY(180deg);
+  background: #4e2b0e;
+}
+
+.tp-mini-left {
+  width: 32px;
+  height: 32px;
+  left: -16px;
+  transform: rotateY(-90deg) translateZ(0);
+  background: linear-gradient(180deg, #74451e 0%, #522c0e 100%);
+}
+
+.tp-mini-right {
+  width: 32px;
+  height: 32px;
+  left: 42px;
+  transform: rotateY(90deg) translateZ(0);
+  background: linear-gradient(180deg, #74451e 0%, #522c0e 100%);
+}
+
+.tp-mini-bottom {
+  width: 58px;
+  height: 32px;
+  top: 32px;
+  transform: rotateX(-90deg) translateZ(0);
+  background: #391c07;
+}
+
+.tp-chest-mini-lid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 58px;
+  height: 14px;
+  transform-style: preserve-3d;
+  transform-origin: 50% 100%;
+}
+
+.tp-mini-lid-top {
+  width: 58px;
+  height: 32px;
+  transform: translateZ(16px) translateY(-14px) rotateX(15deg);
+  background: linear-gradient(180deg, #9e6734 0%, #7b4b20 100%);
+  border-radius: 4px 4px 0 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+.tp-mini-lid-top::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 2px;
+  width: 100%;
+  height: 3px;
+  background: var(--chest-gold);
+}
+
+.tp-mini-lid-front {
+  width: 58px;
+  height: 12px;
+  transform: translateZ(16px);
+  background: #8b5526;
+}
+
+/* Orbiting 3D Gold Coins */
+.tp-orbit-system {
+  position: absolute;
+  width: 140px;
+  height: 70px;
+  transform-style: preserve-3d;
+  transform: rotateX(68deg) rotateY(-8deg);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.tp-orbit-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px dashed rgba(213, 180, 91, 0.15);
+  transform-style: preserve-3d;
+  animation: tp-orbit-spin 5.4s linear infinite;
+}
+
+.tp-orbit-track.track-1 { animation-delay: 0s; }
+.tp-orbit-track.track-2 { animation-delay: -1.8s; }
+.tp-orbit-track.track-3 { animation-delay: -3.6s; }
+
+@keyframes tp-orbit-spin {
+  from { transform: rotateZ(0deg); }
+  to   { transform: rotateZ(360deg); }
+}
+
+.tp-orbit-coin {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  font-size: 15px;
+  display: inline-block;
+  transform: translateX(-50%) rotateX(-68deg);
+  animation: tp-coin-spin-self 1.8s linear infinite;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.5));
+}
+
+@keyframes tp-coin-spin-self {
+  0%   { transform: translateX(-50%) rotateX(-68deg) rotateY(0deg); }
+  100% { transform: translateX(-50%) rotateX(-68deg) rotateY(360deg); }
+}
+
+/* Waiting card typography and footer */
+.tp-waiting-heading {
+  font-size: 21px;
+  font-weight: 700;
+  color: #f7eed2;
+  margin: 6px 0 2px 0;
+  letter-spacing: -0.01em;
+}
+
+.tp-waiting-desc {
+  font-size: 13px;
+  color: #b7c6b5;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.tp-waiting-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(213, 180, 91, 0.18);
+  font-size: 12px;
+  color: #dfd2a5;
+  font-weight: 500;
+}
+
+.tp-waiting-footer svg.spin {
+  color: var(--gold);
+}
+
+.tp-pulse-ring {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #244b2b, #193820);
+  border: 1px solid rgba(131, 201, 154, 0.4);
+  color: #83c99a;
+  margin: 4px auto 8px auto;
+}
+
+.tp-pulse-ring::before,
+.tp-pulse-ring::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(131, 201, 154, 0.5);
+  animation: tp-pulse-waves 2.4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+.tp-pulse-ring::after {
+  animation-delay: 0.8s;
+}
+
+@keyframes tp-pulse-waves {
+  0%   { transform: scale(0.9); opacity: 0.9; }
+  60%  { transform: scale(1.45); opacity: 0.15; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* ------------------------------------------------------------------
+   2. RESULT TRANSITIONS, COINS, SHIELD & TRAP (Requirement 2)
+   ------------------------------------------------------------------ */
+
+/* Directional Floating Coin Labels */
+.tp-floating-coin-label {
+  animation-fill-mode: forwards;
+  animation-timing-function: var(--ease-spring);
+}
+
+/* Gain: arcs upward and towards balance */
+@keyframes tp-float-coin-gain {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 0;
+  }
+  20% {
+    transform: translate(-50%, -85%) scale(1.2);
+    opacity: 1;
+  }
+  60% {
+    transform: translate(-30%, -150%) scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(20px, -240px) scale(0.85);
+    opacity: 0;
+  }
+}
+
+.tp-float-coin-gain {
+  animation-name: tp-float-coin-gain;
+}
+
+/* Loss: scatters outward and downward away from balance */
+@keyframes tp-float-coin-loss {
+  0% {
+    transform: translate(-50%, -50%) scale(0.6);
+    opacity: 0;
+  }
+  20% {
+    transform: translate(-50%, -40%) scale(1.15);
+    opacity: 1;
+  }
+  65% {
+    transform: translate(-80%, 20%) scale(1);
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate(-110%, 80px) scale(0.75);
+    opacity: 0;
+  }
+}
+
+.tp-float-coin-loss {
+  animation-name: tp-float-coin-loss;
+}
+
+/* Shield barrier flash overlay */
+@keyframes tp-shield-flash {
+  0% {
+    box-shadow: inset 0 0 0 2px var(--shield-blue), 0 0 0 0 rgba(136, 200, 216, 0.7);
+    background: rgba(136, 200, 216, 0.15);
+    opacity: 0.95;
+    transform: scale(0.99);
+  }
+  40% {
+    box-shadow: inset 0 0 0 3px #a8e0f0, 0 0 36px 12px rgba(136, 200, 216, 0.45);
+    background: rgba(136, 200, 216, 0.25);
+    opacity: 0.85;
+    transform: scale(1.02);
+  }
+  100% {
+    box-shadow: inset 0 0 0 0 transparent, 0 0 0 0 transparent;
+    background: transparent;
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+/* Trap spiked snap overlay */
+@keyframes tp-trap-snap {
+  0% {
+    box-shadow: inset 0 0 0 2px var(--trap-amber), 0 0 0 0 rgba(212, 200, 96, 0.6);
+    background: rgba(232, 160, 144, 0.2);
+    opacity: 0.95;
+    transform: scale(1.02);
+  }
+  25% {
+    transform: scale(0.97) rotate(-0.5deg);
+    box-shadow: inset 0 0 0 4px #e8a090, 0 0 40px 14px rgba(232, 160, 144, 0.5);
+    background: rgba(232, 160, 144, 0.3);
+  }
+  50% {
+    transform: scale(1.01) rotate(0.5deg);
+  }
+  100% {
+    box-shadow: inset 0 0 0 0 transparent, 0 0 0 0 transparent;
+    background: transparent;
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+/* ------------------------------------------------------------------
+   3D TREASURE CHEST SCENE (Reveal)
+   ------------------------------------------------------------------ */
+
+.tp-chest-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 10px 0 16px 0;
+  padding: 14px 0 8px 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(213, 180, 91, 0.08) 0%, transparent 70%);
+  border-radius: 12px;
+}
+
+.tp-chest-scene {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 96px;
+}
+
+.tp-chest-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 650px;
+  transform-style: preserve-3d;
+  transition: opacity 0.35s ease;
+}
+
+.tp-chest {
+  position: relative;
+  width: 80px;
+  height: 56px;
+  transform-style: preserve-3d;
+  animation: tp-chest-bob 2.6s ease-in-out infinite;
+}
+
+@keyframes tp-chest-bob {
+  0%, 100% { transform: rotateY(-22deg) rotateX(10deg) translateY(0); }
+  50%       { transform: rotateY(-22deg) rotateX(10deg) translateY(-5px); }
+}
+
+.tp-chest-body {
+  position: absolute;
+  width: 80px;
+  height: 40px;
+  top: 16px;
+  transform-style: preserve-3d;
+}
+
+.tp-chest-face {
+  position: absolute;
+  background: var(--chest-brown);
+  border: 1.5px solid var(--chest-dark);
+  box-sizing: border-box;
+}
+
+.tp-chest-front {
+  width: 80px;
+  height: 40px;
+  transform: translateZ(24px);
+  background: linear-gradient(180deg, #8b5e2e 0%, #633917 100%);
+  border-radius: 0 0 4px 4px;
+}
+.tp-chest-front::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 40%;
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(90deg, #8b6914, var(--chest-gold), #8b6914);
+  box-shadow: 0 0 10px rgba(200, 146, 42, 0.6);
+}
+.tp-chest-front::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 55%;
+  transform: translate(-50%, -50%);
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--chest-gold);
+  box-shadow: 0 0 8px rgba(200, 146, 42, 0.8);
+  z-index: 2;
+}
+
+.tp-chest-back {
+  width: 80px;
+  height: 40px;
+  transform: translateZ(-24px) rotateY(180deg);
+  background: var(--chest-dark);
+}
+
+.tp-chest-left {
+  width: 48px;
+  height: 40px;
+  left: -24px;
+  transform: rotateY(-90deg) translateZ(0);
+  background: linear-gradient(180deg, #7a4f2a 0%, #522c0e 100%);
+}
+
+.tp-chest-right {
+  width: 48px;
+  height: 40px;
+  left: 56px;
+  transform: rotateY(90deg) translateZ(0);
+  background: linear-gradient(180deg, #7a4f2a 0%, #522c0e 100%);
+}
+
+.tp-chest-bottom {
+  width: 80px;
+  height: 48px;
+  top: 40px;
+  transform: rotateX(-90deg) translateZ(0);
+  background: #3c1e08;
+}
+
+/* Chest Lid */
+.tp-chest-lid {
+  position: absolute;
+  width: 80px;
+  height: 24px;
+  top: 0;
+  transform-origin: 0% 100%;
+  transform-style: preserve-3d;
+  transform: rotateX(0deg);
+  transition: transform 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.25);
+}
+
+.tp-chest-lid-open {
+  transform: rotateX(-120deg);
+}
+
+.tp-chest-lid-empty-peek {
+  transform: rotateX(-35deg);
+}
+
+.tp-chest-lid-top {
+  width: 80px;
+  height: 48px;
+  transform: translateZ(24px) translateY(-22px) rotateX(15deg);
+  background: linear-gradient(180deg, #9e6833 0%, #77481f 100%);
+  border-radius: 4px 4px 0 0;
+}
+.tp-chest-lid-top::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 3px;
+  width: 100%;
+  height: 5px;
+  background: var(--chest-gold);
+  box-shadow: 0 0 8px rgba(200, 146, 42, 0.6);
+}
+
+.tp-chest-lid-front {
+  width: 80px;
+  height: 24px;
+  transform: translateZ(24px);
+  background: linear-gradient(180deg, #8b5e2e, #74451e);
+}
+
+.tp-chest-lid-back {
+  width: 80px;
+  height: 24px;
+  transform: translateZ(-24px) rotateY(180deg);
+  background: var(--chest-dark);
+}
+
+.tp-chest-lid-left {
+  width: 48px;
+  height: 24px;
+  left: -24px;
+  transform: rotateY(-90deg) translateZ(0);
+  background: #74451e;
+}
+
+.tp-chest-lid-right {
+  width: 48px;
+  height: 24px;
+  left: 56px;
+  transform: rotateY(90deg) translateZ(0);
+  background: #74451e;
+}
+
+/* Light beams radiating from opened chest */
+.tp-chest-glow {
+  position: absolute;
+  width: 70px;
+  height: 35px;
+  left: 5px;
+  top: 10px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(252, 232, 138, 0.95) 0%, rgba(213, 180, 91, 0.4) 45%, transparent 70%);
+  animation: tp-glow-pulse 1.3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.tp-chest-beams {
+  position: absolute;
+  width: 120px;
+  height: 90px;
+  left: -20px;
+  top: -45px;
+  background: radial-gradient(circle at 50% 100%, rgba(254, 243, 199, 0.35) 0%, rgba(213, 180, 91, 0.15) 40%, transparent 70%);
+  filter: blur(6px);
+  pointer-events: none;
+  animation: tp-beam-expand 0.6s ease-out forwards;
+}
+
+@keyframes tp-beam-expand {
+  from { opacity: 0; transform: scaleY(0.4); }
+  to   { opacity: 1; transform: scaleY(1); }
+}
+
+.tp-chest-coins-fly {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.tp-chest-coins-fly .c-coin {
+  position: absolute;
+  font-size: 16px;
+  animation: tp-coin-erupt 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.tp-chest-coins-fly .c1 { left: 20%; animation-delay: 0.35s; }
+.tp-chest-coins-fly .c2 { left: 45%; animation-delay: 0.42s; }
+.tp-chest-coins-fly .c3 { left: 70%; animation-delay: 0.48s; }
+
+@keyframes tp-coin-erupt {
+  0%   { transform: translateY(10px) scale(0.6); opacity: 0; }
+  40%  { opacity: 1; }
+  100% { transform: translateY(-40px) scale(1.1); opacity: 0; }
+}
+
+.tp-chest-dust {
+  position: absolute;
+  width: 60px;
+  height: 25px;
+  left: 10px;
+  top: 15px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(160, 160, 160, 0.4) 0%, transparent 70%);
+  animation: tp-dust-puff 0.8s ease-out forwards;
+}
+
+@keyframes tp-dust-puff {
+  0%   { opacity: 0; transform: scale(0.6); }
+  50%  { opacity: 0.6; transform: scale(1.2); }
+  100% { opacity: 0; transform: scale(1.5); }
+}
+
+.tp-skip-chest {
+  margin-top: 6px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  background: transparent;
+  border: 1px solid rgba(213, 180, 91, 0.25);
+  color: #c9b980;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.tp-skip-chest:hover {
+  background: rgba(213, 180, 91, 0.1);
+  color: #f7eed2;
+}
+
+/* ------------------------------------------------------------------
+   3. ANIMATED PLAYER ROWS & OUTCOMES
+   ------------------------------------------------------------------ */
+
+.anim-row {
+  transition: background 0.3s var(--ease-spring), transform 0.28s var(--ease-spring), box-shadow 0.28s ease;
+}
+
+.anim-hidden {
+  opacity: 0;
+  transform: translateX(-16px);
+}
+
+.anim-visible {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 0.32s ease var(--delay, 0ms), transform 0.32s var(--ease-spring) var(--delay, 0ms);
+}
+
+.anim-pop {
+  transform: scale(1.025) translateX(0);
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.4);
+}
+
+.anim-action-icon {
+  font-style: normal;
+  font-size: 13px;
+  margin-right: 2px;
+}
+
+.anim-delta {
+  font-style: normal;
+  font-weight: 700;
+  font-size: 12px;
+  min-width: 48px;
+  text-align: right;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.anim-positive { color: #9fd19b !important; }
+.anim-negative { color: #e8a997 !important; }
+.anim-neutral  { color: #a7b1a5 !important; }
+
+/* ------------------------------------------------------------------
+   4. REVEAL PANEL ENTRANCE & OUTCOME ITEMS
+   ------------------------------------------------------------------ */
+
+.reveal {
+  animation: tp-reveal-slide 0.45s var(--ease-spring) forwards;
+}
+
+@keyframes tp-reveal-slide {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.outcome-theft { border-left: 3px solid #e8a090 !important; }
+.outcome-trap_penalty { border-left: 3px solid #d4c860 !important; }
+.outcome-guard_blocked { border-left: 3px solid #88c8d8 !important; }
+.outcome-trap_reward { border-left: 3px solid #9fca8a !important; }
+
+/* ------------------------------------------------------------------
+   5. VICTORY OVERLAY (Requirement 3)
+   ------------------------------------------------------------------ */
+
+.tp-victory-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, rgba(24, 52, 32, 0.88) 0%, rgba(8, 20, 13, 0.96) 100%);
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+  transition: opacity 0.45s ease;
+}
+
+.tp-victory-enter {
+  animation: tp-victory-in 0.45s var(--ease-spring) forwards;
+}
+
+.tp-victory-done {
+  animation: tp-victory-out 0.35s ease forwards;
+  pointer-events: none;
+}
+
+@keyframes tp-victory-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes tp-victory-out {
+  from { opacity: 1; }
+  to   { opacity: 0; pointer-events: none; }
+}
+
+/* Radiant celebratory rays behind trophy */
+.tp-victory-rays {
+  position: absolute;
+  width: 480px;
+  height: 480px;
+  background: radial-gradient(circle, rgba(252, 232, 138, 0.12) 0%, rgba(213, 180, 91, 0.05) 50%, transparent 70%);
+  animation: tp-rays-spin 20s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes tp-rays-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.tp-victory-inner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  padding: 0 24px;
+  animation: tp-victory-rise 0.5s var(--ease-spring) forwards;
+}
+
+@keyframes tp-victory-rise {
+  from { transform: translateY(22px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.tp-victory-trophy {
+  font-size: clamp(58px, 11vw, 92px);
+  animation: tp-trophy-float 2.2s ease-in-out infinite;
+  filter: drop-shadow(0 0 28px rgba(240, 212, 122, 0.65));
+  line-height: 1;
+}
+
+@keyframes tp-trophy-float {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50%       { transform: translateY(-10px) rotate(2deg); }
+}
+
+.tp-victory-eyebrow {
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.tp-victory-names {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.tp-victory-name {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 700;
+  color: #fce88a;
+  text-shadow: 0 0 35px rgba(240, 212, 122, 0.6);
+  animation: tp-name-shimmer 2.8s ease-in-out infinite;
+}
+
+@keyframes tp-name-shimmer {
+  0%, 100% { text-shadow: 0 0 25px rgba(240, 212, 122, 0.45); }
+  50%       { text-shadow: 0 0 50px rgba(240, 212, 122, 0.8), 0 0 75px rgba(240, 212, 122, 0.35); }
+}
+
+.tp-victory-coins {
+  font-size: 21px;
+  font-weight: 700;
+  color: #e5ce88;
+  letter-spacing: 0.04em;
+}
+
+.tp-victory-skip {
+  margin-top: 10px;
+  padding: 10px 22px;
+  border: 1px solid rgba(213, 180, 91, 0.4);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #e2d19e;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.tp-victory-skip:hover {
+  background: rgba(213, 180, 91, 0.18);
+  border-color: #d5b45b;
+  color: #fff2c4;
+  transform: translateY(-1px);
+}
+
+.tp-coin-rain {
+  position: absolute;
+  top: -40px;
+  font-size: 22px;
+  animation: tp-coin-fall linear infinite;
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(0 2px 8px rgba(212, 168, 48, 0.5));
+}
+
+@keyframes tp-coin-fall {
+  0%   { transform: translateY(-40px) rotate(0deg); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 0.85; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+
+/* ------------------------------------------------------------------
+   6. ROUND TRANSITIONS & IDLE MOTIONS
+   ------------------------------------------------------------------ */
+
+.tp-round-transition {
+  transition: opacity 0.28s ease, transform 0.28s ease;
+}
+
+.tp-round-enter {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.tp-round-exit {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.tp-animated-coins {
+  font-variant-numeric: tabular-nums;
+  display: inline-block;
+  transition: color 0.2s ease;
+}
+
+
+/* ------------------------------------------------------------------
+   8. REALISTIC HUMAN WAITING CHARACTER & RESOLVING CARD
+   Polished game asset with stylized realism, subtle weight shifting,
+   natural breathing through torso/shoulders, and wristband adjustment.
+   ------------------------------------------------------------------ */
+
+.tp-human-character-container {
+  position: relative;
+  width: 104px;
+  height: 162px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 104px;
+  user-select: none;
+}
+
+/* Compact variation for in-game move submission */
+.tp-human-waiting-mini {
+  width: 82px;
+  height: 128px;
+  flex: 0 0 82px;
+  margin-right: 14px;
+}
+
+/* Ambient ground shadow beneath boots */
+.tp-human-ground-shadow {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 72px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(5, 15, 9, 0.75) 0%, rgba(5, 15, 9, 0.3) 60%, transparent 100%);
+  filter: blur(2.5px);
+  pointer-events: none;
+  animation: tp-human-shadow-pulse 4.4s ease-in-out infinite;
+}
+
+.tp-human-waiting-mini .tp-human-ground-shadow {
+  width: 56px;
+  height: 8px;
+  bottom: 1px;
+}
+
+@keyframes tp-human-shadow-pulse {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: translateX(-50%) scale(1.06, 0.94);
+    opacity: 0.65;
+  }
+}
+
+/* Vector Articulated Character */
+.tp-human-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.45));
+}
+
+/* 1. Subtle Weight Shifting on Root (Anchored on weight-bearing left leg) */
+.tp-char-root {
+  transform-origin: 66px 244px;
+  animation: tp-char-stance-shift 8.6s ease-in-out infinite;
+}
+
+@keyframes tp-char-stance-shift {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  30% {
+    transform: rotate(-0.7deg) translateX(-0.5px);
+  }
+  70% {
+    transform: rotate(0.4deg) translateX(0.5px);
+  }
+}
+
+/* 2. Torso Idle Breathing */
+.tp-char-torso {
+  transform-origin: 80px 145px;
+  animation: tp-char-torso-breathe 4.2s ease-in-out infinite;
+}
+
+@keyframes tp-char-torso-breathe {
+  0%, 100% {
+    transform: scale(1, 1) translateY(0);
+  }
+  50% {
+    transform: scale(1.015, 1.02) translateY(-1.5px);
+  }
+}
+
+/* 3. Head Glance: Checks if another adventurer arrived */
+.tp-char-head-group {
+  transform-origin: 80px 78px;
+  animation: tp-char-head-look 7.8s ease-in-out infinite;
+}
+
+@keyframes tp-char-head-look {
+  0%, 46% {
+    transform: rotate(0deg);
+  }
+  55% {
+    transform: rotate(5deg) translateX(1px);
+  }
+  68% {
+    transform: rotate(5deg) translateX(1px);
+  }
+  76% {
+    transform: rotate(-1deg);
+  }
+  84%, 100% {
+    transform: rotate(0deg);
+  }
+}
+
+/* 4. Natural Eyelid Blinking */
+.tp-char-eyelids {
+  transform-origin: 80px 48px;
+  animation: tp-char-blink-anim 4.6s infinite;
+}
+
+@keyframes tp-char-blink-anim {
+  0%, 93%, 97%, 100% {
+    opacity: 0;
+    transform: scaleY(0.08);
+  }
+  94.5% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+/* 5. Right Upper Arm: Pivoting at Shoulder Joint (104, 86) */
+.tp-char-arm-upper-right {
+  transform-origin: 104px 86px;
+  animation: tp-arm-upper-adjust 7.6s cubic-bezier(0.38, 0, 0.22, 1) infinite;
+}
+
+@keyframes tp-arm-upper-adjust {
+  0%, 35%, 85%, 100% {
+    transform: rotate(0deg);
+  }
+  44% {
+    transform: rotate(-5deg) translateY(-0.8px);
+  }
+  52% {
+    transform: rotate(-7deg) translateY(-1.2px);
+  }
+  60% {
+    transform: rotate(-4.5deg) translateY(-0.8px);
+  }
+  68% {
+    transform: rotate(-6.5deg) translateY(-1px);
+  }
+  76% {
+    transform: rotate(-1.5deg);
+  }
+}
+
+/* 6. Right Forearm: Pivoting at Elbow Joint (101, 120) toward Opposite Wrist */
+.tp-char-arm-forearm-right {
+  transform-origin: 101px 120px;
+  animation: tp-arm-forearm-adjust 7.6s cubic-bezier(0.38, 0, 0.22, 1) infinite;
+}
+
+@keyframes tp-arm-forearm-adjust {
+  0%, 35%, 85%, 100% {
+    transform: rotate(0deg);
+  }
+  44% {
+    transform: rotate(-8deg) translateX(-2px) translateY(-3px);
+  }
+  52% {
+    transform: rotate(-13deg) translateX(-4px) translateY(-5px);
+  }
+  60% {
+    transform: rotate(-8.5deg) translateX(-2.5px) translateY(-3px);
+  }
+  68% {
+    transform: rotate(-12deg) translateX(-3.5px) translateY(-4.5px);
+  }
+  76% {
+    transform: rotate(-2.5deg) translateX(-0.5px);
+  }
+}
+
+/* 7. Right Hand: Adjusting / Tugging the Wristband at (80, 133) */
+.tp-char-hand-right {
+  transform-origin: 80px 133px;
+  animation: tp-hand-adjust 7.6s ease-in-out infinite;
+}
+
+@keyframes tp-hand-adjust {
+  0%, 35%, 85%, 100% {
+    transform: rotate(0deg);
+  }
+  48% {
+    transform: rotate(5deg) scale(1.05);
+  }
+  54% {
+    transform: rotate(-2deg) scale(0.98);
+  }
+  62% {
+    transform: rotate(6deg) scale(1.05);
+  }
+  70% {
+    transform: rotate(1deg);
+  }
+}
+
+/* 8. Wristband Reacts Gently to Finger Adjustment */
+.tp-char-wristband-unit {
+  transform-origin: 73px 132.5px;
+  animation: tp-wristband-react 7.6s ease-in-out infinite;
+}
+
+@keyframes tp-wristband-react {
+  0%, 48%, 74%, 100% {
+    transform: scale(1);
+  }
+  53% {
+    transform: scale(1.08) rotate(-1deg);
+  }
+  61% {
+    transform: scale(1.04) rotate(0.5deg);
+  }
+}
+
+/* Subtle progress indicator without countdown */
+.tp-waiting-progress-track {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0.75rem auto;
+  padding: 6px 14px;
+  background: rgba(16, 37, 28, 0.65);
+  border: 1px solid rgba(213, 180, 91, 0.25);
+  border-radius: 20px;
+  width: fit-content;
+}
+
+.tp-progress-bar-subtle {
+  width: 120px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.tp-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #9fca8a, #f0d47a);
+  border-radius: 3px;
+  animation: tp-subtle-pulse 2s ease-in-out infinite alternate;
+  transition: width 0.4s ease;
+}
+
+.tp-progress-ratio {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #f0d47a;
+}
+
+@keyframes tp-subtle-pulse {
+  0% {
+    opacity: 0.7;
+    filter: brightness(0.95);
+  }
+  100% {
+    opacity: 1;
+    filter: brightness(1.2) drop-shadow(0 0 6px rgba(240, 212, 122, 0.6));
+  }
+}
+
+/* Directional Coin Flight: Gain towards balance, Loss scattering away */
+.tp-floating-coin-label {
+  position: fixed;
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 700;
+  pointer-events: none;
+  z-index: 9998;
+  white-space: nowrap;
+}
+
+@keyframes tp-float-coin-gain {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.65);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -65%) scale(1.15);
+  }
+  70% {
+    opacity: 1;
+    transform: translate(calc(-50% + 40px), -130px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + 80px), -180px) scale(0.85);
+  }
+}
+
+@keyframes tp-float-coin-loss {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.75);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -40%) scale(1.1);
+  }
+  60% {
+    opacity: 0.9;
+    transform: translate(calc(-50% - 30px), 40px) scale(0.95);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% - 60px), 95px) scale(0.75);
+  }
+}
+
+/* Shield and Trap Flash Overlays */
+.tp-shield-flash-overlay {
+  background: radial-gradient(ellipse at center, rgba(136, 200, 216, 0.4) 0%, rgba(136, 200, 216, 0.05) 70%, transparent 100%);
+  border: 2px solid rgba(136, 200, 216, 0.8);
+  box-shadow: 0 0 24px rgba(136, 200, 216, 0.6);
+}
+
+@keyframes tp-shield-flash {
+  0%   { opacity: 0; transform: scale(0.92); }
+  35%  { opacity: 1; transform: scale(1.03); }
+  100% { opacity: 0; transform: scale(1.08); }
+}
+
+.tp-trap-flash-overlay {
+  background: radial-gradient(ellipse at center, rgba(212, 200, 96, 0.45) 0%, rgba(232, 160, 144, 0.1) 70%, transparent 100%);
+  border: 2px solid rgba(212, 200, 96, 0.85);
+  box-shadow: 0 0 24px rgba(212, 200, 96, 0.6);
+}
+
+@keyframes tp-trap-flash {
+  0%   { opacity: 0; transform: scale(0.94); }
+  30%  { opacity: 1; transform: scale(1.04); }
+  100% { opacity: 0; transform: scale(1.08); }
+}
+
+
+.tp-lobby-waiting-card {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: left;
+  padding: 1.1rem 1.4rem;
+  margin: 0.85rem 0 1.25rem;
+  background: linear-gradient(135deg, rgba(26, 48, 36, 0.72) 0%, rgba(16, 37, 28, 0.88) 100%);
+  border: 1px solid rgba(159, 202, 138, 0.16);
+  border-radius: 12px;
+  box-shadow: 0 10px 32px rgba(6, 19, 11, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  gap: 1.25rem;
+  overflow: hidden;
+  animation: tp-reveal-slide 0.35s ease forwards;
+}
+
+.tp-lobby-character-col {
+  flex: 0 0 104px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tp-lobby-waiting-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1;
+  min-width: 0;
+}
+
+.tp-lobby-waiting-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #f3f0e4;
+  margin: 0.2rem 0 0.35rem;
+  letter-spacing: -0.01em;
+}
+
+.tp-lobby-waiting-desc {
+  font-size: 0.88rem;
+  color: #b8c4b6;
+  line-height: 1.45;
+  margin: 0 0 0.75rem;
+  max-width: 460px;
+}
+
+.tp-lobby-waiting-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tp-lobby-ready-pill {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 3px 10px;
+  background: rgba(159, 202, 138, 0.12);
+  color: #9fca8a;
+  border: 1px solid rgba(159, 202, 138, 0.24);
+  border-radius: 12px;
+}
+
+.tp-lobby-hint {
+  font-size: 11px;
+  color: #aeb9aa;
+  font-weight: 500;
+}
+
+.tp-lobby-hint.tp-ready-hint {
+  color: #9fca8a;
+}
+
+@media (max-width: 600px) {
+  .tp-lobby-waiting-card {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 1.2rem 1rem;
+    gap: 0.85rem;
+  }
+  .tp-lobby-character-col {
+    flex: 0 0 auto;
+  }
+  .tp-human-character-container {
+    width: 86px;
+    height: 124px;
+    flex: 0 0 86px;
+  }
+  .tp-lobby-waiting-content {
+    align-items: center;
+  }
+  .tp-lobby-waiting-title {
+    font-size: 1.1rem;
+  }
+  .tp-lobby-waiting-footer {
+    justify-content: center;
+  }
+}
+
+.tp-resolving-card {
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  animation: tp-reveal-slide 0.35s ease forwards;
+}
+
+/* ------------------------------------------------------------------
+   7. ACCESSIBILITY: PREFERS-REDUCED-MOTION
+   Disables continuous loops, particles, and rapid transitions.
+   ------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  .tp-human-ground-shadow,
+  .tp-char-root,
+  .tp-char-torso,
+  .tp-char-head-group,
+  .tp-char-eyelids,
+  .tp-char-arm-upper-right,
+  .tp-char-arm-forearm-right,
+  .tp-char-hand-right,
+  .tp-char-wristband-unit,
+  .tp-progress-bar-fill,
+  .tp-waiting-chest-3d,
+  .tp-orbit-track,
+  .tp-orbit-coin,
+  .tp-pulse-ring::before,
+  .tp-pulse-ring::after,
+  .tp-sparkle,
+  .tp-waiting-aura,
+  .tp-chest,
+  .tp-chest-glow,
+  .tp-chest-beams,
+  .tp-chest-coins-fly .c-coin,
+  .tp-chest-dust,
+  .tp-victory-overlay,
+  .tp-victory-inner,
+  .tp-victory-trophy,
+  .tp-victory-name,
+  .tp-victory-rays,
+  .tp-coin-rain,
+  .tp-floating-coin-label,
+  .tp-shield-flash-overlay,
+  .tp-trap-flash-overlay,
+  .reveal,
+  .anim-hidden,
+  .anim-visible,
+  .anim-pop,
+  .tp-round-transition {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
