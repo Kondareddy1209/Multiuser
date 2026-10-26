@@ -2,9 +2,12 @@
 
 [![React](https://img.shields.io/badge/React-18.3.1-blue?logo=react)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-6.0.7-646CFF?logo=vite)](https://vitejs.dev/)
-[![Tests](https://img.shields.io/badge/Tests-33%20Passed-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-34%20Passed-brightgreen)](tests/)
 [![JavaScript](https://img.shields.io/badge/ESM-JavaScript-F7DF1E?logo=javascript)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![GitHub](https://img.shields.io/badge/GitHub-Kondareddy1209%2FMultiuser-181717?logo=github)](https://github.com/Kondareddy1209/Multiuser)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-treasur--plots.netlify.app-00C7B7?logo=netlify)](https://treasur-plots.netlify.app/)
+
+> **Live Production Game:** [https://treasur-plots.netlify.app/](https://treasur-plots.netlify.app/)
 
 Treasure Plots is a real-time, browser-based multiplayer strategy and party game. Up to eight players gather in an anonymous clearing, start with five coins, and compete across three rounds of simultaneous secret decisions. 
 
@@ -209,10 +212,10 @@ node --test
 ```
 
 **Test Coverage Summary:**
-- **Total Tests:** 33 passing
+- **Total Tests:** 34 passing
 - **Modules Covered:**
   - `tests/gameRules.test.js`: Validates action definitions, costs, steal allocations, tiebreaker logic, idempotency, and regression guards.
-  - `tests/readiness.test.js`: Validates host auto-readiness, guest review mandates, live sync subscriptions, and safe error redaction.
+  - `tests/readiness.test.js`: Validates host auto-readiness, guest review mandates, live sync subscriptions, accessible UI states, and safe error redaction.
 
 ### Production Build
 ```bash
@@ -304,6 +307,9 @@ Execute the migration scripts in sequential order using the **Supabase SQL Edito
 The application compiles to a static single-page application that can be hosted on any static hosting platform.
 
 ### Netlify Deployment
+
+The application is deployed live to production at:
+👉 **[https://treasur-plots.netlify.app/](https://treasur-plots.netlify.app/)**
 
 The repository includes a [netlify.toml](netlify.toml) pre-configured with:
 - **Build command:** `npm run build`
