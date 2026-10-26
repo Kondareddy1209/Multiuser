@@ -6,6 +6,7 @@ import { canStartRoom, needsReadinessReview, readinessLabel, verifyReadyReadback
 const app = await readFile(new URL('../src/main.jsx', import.meta.url), 'utf8');
 const migration = await readFile(new URL('../supabase/migrations/002_multiplayer_actions_and_readiness.sql', import.meta.url), 'utf8');
 const diagnostics = await readFile(new URL('../src/supabaseDiagnostics.js', import.meta.url), 'utf8');
+const styles = await readFile(new URL('../src/style.css', import.meta.url), 'utf8');
 
 test('room creator is automatically marked ready and enters lobby without forced rules review', () => {
   assert.ok(app.includes("if(creating)await call('set_player_ready',{p_code:r.code,p_ready:true})"));
@@ -66,4 +67,15 @@ test('development RPC diagnostics omit room codes and credentials', () => {
   assert.match(diagnostics, /message: safeMessage\(error\)/);
   assert.match(app, /console\.info\('\[Treasure Plots\] readiness readback'/);
   assert.doesNotMatch(app, /console\.(?:error|info)\([^\n]*(?:apikey|access_token|refresh_token)/i);
+});
+
+test('lobby readiness states are both explicit, accessible, and visually distinct', () => {
+  assert.ok(app.includes("className={'readiness-mark '+(p.ready?'ready':'waiting')}") );
+  assert.match(app, /aria-label=\{p\.ready\?'Ready':'Not ready'\}/);
+  assert.match(app, /role="status" aria-live="polite"/);
+  assert.match(styles, /\.lobby-player\.is-ready/);
+  assert.match(styles, /\.lobby-player\.is-waiting/);
+  assert.match(styles, /\.readiness-mark\.ready/);
+  assert.match(styles, /\.readiness-mark\.waiting/);
+  assert.match(styles, /prefers-reduced-motion: reduce/);
 });
