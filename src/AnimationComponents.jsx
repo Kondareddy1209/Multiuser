@@ -12,17 +12,17 @@
  * STRICT CONTRACT: animations only fire when authoritative Supabase data
  * arrives (result.events from round_results). Never before.
  */
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
 import {
   prefersReducedMotion,
   hasSeenRound,
   markRoundSeen,
   clearSeenRounds,
-  playEventAnimation,
   playVictoryCelebration,
   mountChestAnimation,
   floatCoinLabel,
 } from './animations.js';
+import { buildRevealSteps, startingCoinSnapshot, MOVE_POSES, REVEAL_ACTION_MS, REVEAL_STEP_MS } from './revealSequence.js';
 
 // ---------------------------------------------------------------------------
 // Hook: deduplication + sequencing for a single round
@@ -37,38 +37,68 @@ import {
  * @param {object} prev       Previous round coin snapshot
  * @param {object} current    Current round coin snapshot
  */
-export function useRoundAnimation(roomId, roundNo, events, players, prev, current) {
-  const fired = useRef(false);
-  const rowRefs = useRef({}); // player_id -> DOM element ref
+export function useRoundAnimation(roomId, roundNo, events, prev, current, animate = false) {
+  const [timeline, setTimeline] = useState({ state: 'idle', step: -1, balances: {}, activeEffects: [] });
 
-  const setRowRef = useCallback((playerId, el) => {
-    rowRefs.current[playerId] = el;
-  }, []);
-
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!roomId || !roundNo || !events?.length) return;
-    if (fired.current) return;
-    if (hasSeenRound(roomId, roundNo)) return;
-
-    const raf = requestAnimationFrame(() => {
+    const finalBalances = current?.coins || {};
+    const key = `${roomId}:${roundNo}`;
+    const finish = () => setTimeline({ state: 'done', step: -1, balances: { ...finalBalances }, activeEffects: [] });
+    if (!animate) {
+      finish();
+      return;
+    }
+    if (prefersReducedMotion() || hasSeenRound(roomId, roundNo)) {
       markRoundSeen(roomId, roundNo);
-      fired.current = true;
+      finish();
+      return;
+    }
 
-      const reduced = prefersReducedMotion();
-      const actionEvents = events.filter(e => e.choice);
+    markRoundSeen(roomId, roundNo);
+    const sequence = buildRevealSteps(events);
+    const initialBalances = startingCoinSnapshot(current, prev);
+    setTimeline({ state: 'actions', step: -1, balances: initialBalances, activeEffects: [] });
+    let timer;
+    let index = 0;
+    let balances = { ...initialBalances };
+    timer = setTimeout(() => {
+      if (!sequence.length) { finish(); return; }
+      const runStep = () => {
+        if (index >= sequence.length) { finish(); return; }
+        const step = sequence[index];
+        setTimeline({ state: 'outcomes', step: index, balances: { ...balances }, activeEffects: step.effects });
+        timer = setTimeout(() => {
+          for (const [playerId, delta] of Object.entries(step.deltas)) {
+            balances[playerId] = Math.max(0, Number(balances[playerId] ?? 0) + Number(delta));
+          }
+          index += 1;
+          if (index >= sequence.length) finish();
+          else runStep();
+        }, REVEAL_STEP_MS);
+      };
+      runStep();
+    }, REVEAL_ACTION_MS);
+    return () => clearTimeout(timer);
+  // Room polling creates fresh object/array identities. Keying only on the
+  // resolved round prevents the animation from restarting on each sync tick.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId, roundNo, animate]);
 
-      // Stagger per player row — 130ms apart
-      actionEvents.forEach((evt, idx) => {
-        const rowEl = rowRefs.current[evt.player_id];
-        if (!rowEl || reduced) return;
-        playEventAnimation(rowEl, evt, idx * 130);
-      });
-    });
-
-    return () => cancelAnimationFrame(raf);
-  }, [roomId, roundNo, events]);
-
-  return { setRowRef };
+  const actionPoses = Object.fromEntries((events || []).filter(event => event?.choice && event?.player_id)
+    .map(event => [event.player_id, MOVE_POSES[event.choice] || 'idle']));
+  const activeStep = timeline.state === 'outcomes' ? buildRevealSteps(events || [])[timeline.step] : null;
+  const poseFor = playerId => {
+    if (timeline.state === 'actions') return actionPoses[playerId] || 'idle';
+    if (timeline.state !== 'outcomes' || !activeStep) return 'idle';
+    const effect = activeStep.effects.find(item => item.playerId === playerId);
+    if (!effect) return 'idle';
+    return effect.delta > 0 ? 'win' : effect.delta < 0 ? 'lose'
+      : ['steal-blocked','explore-empty','dig-fail'].includes(effect.kind) ? 'lose' : 'guard';
+  };
+  const outcomeFor = playerId => activeStep?.effects.find(item => item.playerId === playerId)?.kind || '';
+  const deltaFor = playerId => activeStep?.effects.filter(item => item.playerId === playerId).reduce((sum, item) => sum + item.delta, 0) ?? null;
+  return { timeline, poseFor, outcomeFor, deltaFor };
 }
 
 // ---------------------------------------------------------------------------
@@ -126,62 +156,63 @@ const ACTION_LABELS = {
  * Animated player-action row for the Reveal panel.
  */
 export const AnimatedPlayerRow = React.forwardRef(function AnimatedPlayerRow(
-  { event, avatarIndex = 0, delayMs = 0 },
+  { event, avatarIndex = 0, pose = 'idle', revealState = 'done', balance, revealDelta = null, outcome = '', effectToken = '' },
   ref
 ) {
-  const [visible, setVisible] = useState(false);
-  const [popped, setPopped] = useState(false);
   const reduced = prefersReducedMotion();
-
+  const [floatingDelta, setFloatingDelta] = useState(null);
+  const labelTimer = useRef(null);
   useEffect(() => {
-    if (reduced) {
-      setVisible(true);
-      return;
+    if (revealDelta == null) return;
+    if (reduced) { setFloatingDelta(revealDelta); return; }
+    if (revealState === 'outcomes') {
+      clearTimeout(labelTimer.current);
+      setFloatingDelta(revealDelta);
+      labelTimer.current = setTimeout(() => setFloatingDelta(null), 1200);
     }
-    const t1 = setTimeout(() => setVisible(true), delayMs);
-    const t2 = setTimeout(() => setPopped(true), delayMs + 60);
-    const t3 = setTimeout(() => setPopped(false), delayMs + 320);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-    };
-  }, [delayMs, reduced]);
+  }, [effectToken, revealDelta, revealState, reduced]);
+  useEffect(() => () => clearTimeout(labelTimer.current), []);
 
   const meta = ACTION_LABELS[event.choice] ?? { icon: '?', verb: event.choice, color: '#aaa' };
-  const delta = Number(event.delta ?? 0);
-  const deltaClass = delta > 0 ? 'anim-positive' : delta < 0 ? 'anim-negative' : 'anim-neutral';
+  const visibleBalance = balance == null ? '—' : Number(balance);
+  const label = floatingDelta == null ? null : Number(floatingDelta);
+  const showLabel = label !== null && (label !== 0 || ['explore-empty','dig-fail'].includes(outcome));
 
   return (
     <div
       ref={ref}
-      className={`revealed-player anim-row ${visible ? 'anim-visible' : 'anim-hidden'} ${popped ? 'anim-pop' : ''}`}
-      style={{ '--delay': `${delayMs}ms` }}
+      data-pose={pose}
+      data-reveal-state={revealState}
+      className="revealed-player tp-reveal-player"
     >
+      <RealisticWaitingCharacter pose={pose} outcome={outcome} reduced={reduced} className="tp-reveal-character" />
       <span className={`avatar av${avatarIndex % 6}`}>
         {event.name?.[0] ?? '?'}
       </span>
       <span>
-        <b>{event.name}</b>
+        <b className="tp-reveal-name">{event.name}{showLabel && <i className={`tp-floating-delta ${label > 0 ? 'positive' : label < 0 ? 'negative' : 'neutral'}`} key={`${effectToken}-${label}`}>{label > 0 ? '+' : label < 0 ? '−' : ''}{Math.abs(label)}</i>}</b>
         <small>
           <span className="anim-action-icon" style={{ color: meta.color }}>{meta.icon}</span>
           {' '}
           {event.choice === 'steal'
             ? `Targeted ${event.target_name}`
             : meta.verb}
-          {event.choice === 'dig_deep'
+          {revealState === 'done' || revealDelta !== null ? (event.choice === 'dig_deep'
             ? (event.success ? ' · ✨ Found 4 coins!' : ' · Excavation empty')
             : event.choice === 'explore'
               ? (event.success ? ' · 🗺 Found 2 bonus coins!' : ' · No bonus find')
-              : ''}
+              : '') : ''}
         </small>
       </span>
-      <i className={`anim-delta ${deltaClass}`}>
-        {delta > 0 ? `+${delta} coins` : delta < 0 ? `${delta} coins` : '0 coins'} 🪙
-      </i>
+      <span className="tp-reveal-balance" aria-label={`${event.name} has ${visibleBalance} coins`}>
+        {revealState === 'outcomes' && <i className={`tp-coin-flight ${deltaForClass(label)} ${outcome}`} aria-hidden="true">🪙</i>}
+        <b>{visibleBalance}</b><span aria-hidden="true">🪙</span>
+      </span>
     </div>
   );
 });
+
+function deltaForClass(delta) { return Number(delta) > 0 ? 'gain' : Number(delta) < 0 ? 'spend' : 'neutral'; }
 
 // ---------------------------------------------------------------------------
 // Victory Overlay (mounted on the Final screen)
@@ -328,205 +359,118 @@ export function AnimatedCoinCount({ coins, prevCoins }) {
 }
 
 // ---------------------------------------------------------------------------
-// Realistic Articulated Waiting Character (Layered Human Adventurer)
-// ---------------------------------------------------------------------------
-
-export function RealisticWaitingCharacter({ reduced = false, className = '' }) {
+// Reused inline SVG from waiting-player.html; memoization keeps its CSS timeline steady during polling.
+export const RealisticWaitingCharacter = React.memo(function RealisticWaitingCharacter({ reduced = false, active = false, pose = 'idle', outcome = '', className = '' }) {
+  const animate = active && !reduced;
+  const normalizedPose = ['idle','waiting','search','steal','trap','guard','dig','explore','win','lose'].includes(pose) ? pose : 'idle';
+  const props = outcome ? ` outcome-${String(outcome).replace(/[^a-z-]/g, '')}` : '';
   return (
-    <div className={`tp-human-character-container ${className}`} aria-hidden="true">
-      {/* Ground ambient contact shadow beneath boots */}
-      <div className="tp-human-ground-shadow" />
+    <div className={`tp-human-character-container ${className} ${animate ? 'is-waiting' : 'is-static'} pose-${normalizedPose}${props}`} data-pose={normalizedPose} data-reveal-state={normalizedPose === 'idle' || normalizedPose === 'waiting' ? 'idle' : 'active'}>
+      <svg className={`tp-waiting-player-svg${animate ? " is-active" : ""}`} viewBox="0 0 300 460" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A player checking his watch while waiting for another player">
 
-      {/* Articulated, layered SVG character with independent head, torso, arm joints */}
-      <svg
-        className="tp-human-svg"
-        viewBox="0 0 160 260"
-        width="104"
-        height="162"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <defs>
-          <linearGradient id="tpSkinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#f5cfb0" />
-            <stop offset="60%" stopColor="#e2b493" />
-            <stop offset="100%" stopColor="#c79471" />
-          </linearGradient>
-          <linearGradient id="tpJacketGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#43634e" />
-            <stop offset="45%" stopColor="#304c3a" />
-            <stop offset="100%" stopColor="#1f3427" />
-          </linearGradient>
-          <linearGradient id="tpPantsGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#2c3a30" />
-            <stop offset="100%" stopColor="#1a231d" />
-          </linearGradient>
-          <linearGradient id="tpBootGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#543b27" />
-            <stop offset="60%" stopColor="#3c2818" />
-            <stop offset="100%" stopColor="#25180e" />
-          </linearGradient>
-          <linearGradient id="tpHairGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#4d3525" />
-            <stop offset="60%" stopColor="#342217" />
-            <stop offset="100%" stopColor="#20140d" />
-          </linearGradient>
-          <linearGradient id="tpLeatherGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#7a5231" />
-            <stop offset="100%" stopColor="#4a2e18" />
-          </linearGradient>
-          <linearGradient id="tpGoldDial" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#f7e494" />
-            <stop offset="50%" stopColor="#d5b45b" />
-            <stop offset="100%" stopColor="#8d6f26" />
-          </linearGradient>
-        </defs>
 
-        {/* Ambient shadow ellipse on ground */}
-        <ellipse cx="80" cy="245" rx="46" ry="6.5" fill="#07130b" opacity="0.65" />
+      {/* ground shadow + legs (static) */}
+      <ellipse cx="150" cy="440" rx="80" ry="9" fill="#000" opacity=".3"/>
+      <g className="tp-waiting-player-leg-back"><path d="M108 252 L149 252 L146 420 L111 420 Z" fill="#59614c"/><path d="M129 270 L128 405" stroke="#737b62" strokeWidth="2" strokeLinecap="round"/></g>
+      <g className="tp-waiting-player-leg-front"><path d="M151 252 L192 252 L189 420 L154 420 Z" fill="#48513e"/><path d="M171 270 L172 405" stroke="#737b62" strokeWidth="2" strokeLinecap="round"/></g>
+      <ellipse cx="126" cy="428" rx="23" ry="8.5" fill="#5b4027" stroke="#2a1b11" strokeWidth="2"/>
+      <g className="tp-waiting-player-fo"><ellipse cx="176" cy="428" rx="23" ry="8.5" fill="#5b4027" stroke="#2a1b11" strokeWidth="2"/></g>
 
-        {/* Root Character Group with casual weight shifted onto left leg */}
-        <g className="tp-char-root">
-          {/* Subtle outdoor pack strap & bedroll on back */}
-          <g className="tp-char-pack">
-            <rect x="43" y="78" width="16" height="42" rx="5" fill="#38291e" opacity="0.85" />
-            <ellipse cx="50" cy="76" rx="8" ry="6" fill="#4d392b" />
+      <g className="tp-waiting-player-breath"><g className="tp-waiting-player-sigh">
+
+        {/* torso */}
+        <g className="tp-waiting-player-torso">
+          <path d="M100 134 Q104 124 126 120 L174 120 Q196 124 200 134 L204 170 L198 262 Q150 272 102 262 L96 170 Z" fill="#365b3d"/>
+          <path d="M150 124 L200 134 L204 170 L198 262 Q175 268 150 268 Z" fill="#254531" opacity=".32"/>
+          <path d="M102 262 Q150 272 198 262" stroke="#f3ead2" strokeWidth="3" fill="none" opacity=".85"/>
+          <path d="M132 119 L150 148 L168 119 Z" fill="#b57b55"/>
+          <path d="M129 118 L150 150 L171 118" stroke="#f3ead2" strokeWidth="4" fill="none" strokeLinejoin="round"/>
+        </g>
+
+        {/* neck */}
+        <rect x="139" y="100" width="22" height="26" rx="6" fill="#b57b55"/>
+
+        {/* head */}
+        <g className="tp-waiting-player-hd">
+          <ellipse cx="123" cy="86" rx="5" ry="8" fill="#c58a63"/><ellipse cx="177" cy="86" rx="5" ry="8" fill="#c58a63"/>
+          <ellipse cx="150" cy="84" rx="27" ry="31" fill="#c58a63"/>
+          <path d="M123 68 L123 84 Q126 78 129 72 Z M177 68 L177 84 Q174 78 171 72 Z" fill="#1c1512"/>
+          <g className="tp-waiting-player-fc">
+            <g className="tp-waiting-player-bl">
+              <ellipse cx="138" cy="89" rx="6" ry="4.2" fill="#fff"/><ellipse cx="162" cy="89" rx="6" ry="4.2" fill="#fff"/>
+              <g className="tp-waiting-player-pu"><circle cx="138" cy="89" r="2.7" fill="#2a1a12"/><circle cx="162" cy="89" r="2.7" fill="#2a1a12"/></g>
+            </g>
+            <g className="tp-waiting-player-br" fill="none" stroke="#1c1512" strokeWidth="2.4" strokeLinecap="round">
+              <path d="M131 82 q7 -3 14 0"/><path d="M155 82 q7 -3 14 0"/>
+            </g>
+            <path d="M150 90 q-3 8 -1 11 q3 2 5 0" stroke="#9c6544" strokeWidth="2" fill="none" strokeLinecap="round"/>
+            <ellipse className="tp-waiting-player-mo" cx="150" cy="106" rx="6" ry="1.4" fill="#7d3f31"/>
           </g>
+          {/* cap */}
+          <path d="M120 72 Q117 38 150 36 Q183 38 180 72 Q150 64 120 72 Z" fill="#294a34"/>
+          <path d="M150 37 L150 66" stroke="#203d2b" strokeWidth="2"/>
+          <circle cx="150" cy="37" r="3" fill="#173323"/>
+          <path d="M118 67 Q150 76 182 67 L181 72 Q150 83 119 72 Z" fill="#173323"/>
+        </g>
 
-          {/* Legs & Boots Group (Standing casually with weight on left leg) */}
-          <g className="tp-char-legs">
-            {/* Pelvis / Hips */}
-            <path d="M58 140 L102 140 L98 162 L62 162 Z" fill="#202922" />
-
-            {/* Left Leg: Weight-bearing, straight down to left boot */}
-            <path d="M60 156 L76 156 L75 195 L74 233 L58 233 L59 195 Z" fill="url(#tpPantsGrad)" />
-            <path d="M62 191 Q67 195 72 191" stroke="#151d17" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-            <path d="M58 229 L74 229 L75 235 L57 235 Z" fill="#18211a" />
-            {/* Left Boot */}
-            <path d="M55 233 L74 233 L76 241 L74 246 L50 246 L51 239 Z" fill="url(#tpBootGrad)" />
-            <path d="M50 244 L76 244 L76 247 L49 247 Z" fill="#160e08" />
-
-            {/* Right Leg: Relaxed casual stance, knee angled slightly outward */}
-            <path d="M84 156 L100 156 L102 192 L96 232 L82 232 L85 192 Z" fill="url(#tpPantsGrad)" />
-            <path d="M87 189 Q93 194 99 189" stroke="#151d17" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-            <path d="M82 228 L96 228 L97 234 L81 234 Z" fill="#18211a" />
-            {/* Right Boot: Angled slightly outward */}
-            <path d="M81 232 L97 232 L105 240 L103 245 L79 245 L80 238 Z" fill="url(#tpBootGrad)" />
-            <path d="M78 244 L105 244 L105 247 L77 247 Z" fill="#160e08" />
-
-            {/* Adventure Pouch on Right Hip */}
-            <g className="tp-char-pouch">
-              <rect x="96" y="146" width="13" height="17" rx="3" fill="url(#tpLeatherGrad)" />
-              <path d="M96 151 L109 151" stroke="#331f11" strokeWidth="1" />
-              <circle cx="102.5" cy="154" r="1.5" fill="#d5b45b" />
-            </g>
+        {/* watch arm: upper > forearm > hand (image right) */}
+        <g className="tp-waiting-player-a1u">
+          <rect x="187" y="126" width="26" height="72" rx="13" fill="#c58a63"/>
+          <path d="M185 126 Q200 117 215 128 L216 168 Q200 175 184 168 Z" fill="#365b3d"/>
+          <path d="M184 168 Q200 175 216 168" stroke="#f3ead2" strokeWidth="3" fill="none"/>
+          <g className="tp-waiting-player-a1f">
+            <rect x="190" y="190" width="20" height="62" rx="10" fill="#c58a63"/>
+            <rect x="189" y="230" width="22" height="17" rx="3" fill="#14171b"/>
+            <circle cx="200" cy="238" r="9.5" fill="#d8b25a"/>
+            <circle cx="200" cy="238" r="7.5" fill="#f6f1e1"/>
+            <path d="M200 238 L200 233 M200 238 L203.5 240" stroke="#222" strokeWidth="1.4" strokeLinecap="round"/>
+            <g className="tp-waiting-player-tk"><path d="M200 238 L200 231.5" stroke="#d94b3d" strokeWidth="1"/></g>
+            <circle cx="200" cy="238" r="1.2" fill="#222"/>
+            <path d="M195 234 Q197 232 200 232" stroke="#fff" strokeWidth="1.2" fill="none" opacity=".7"/>
+            <g className="tp-waiting-player-a1h"><rect x="190" y="248" width="20" height="14" rx="7" fill="#c58a63"/></g>
           </g>
+        </g>
 
-          {/* Torso & Arms (Independently Articulated with Natural Breathing) */}
-          <g className="tp-char-torso">
-            {/* Belt */}
-            <path d="M59 139 L101 139 L101 146 L59 146 Z" fill="#4d321d" />
-            <rect x="76" y="138" width="8" height="9" rx="1.5" fill="#d5b45b" stroke="#7e5d26" strokeWidth="1" />
-
-            {/* Jacket Body */}
-            <path d="M56 86 C56 86, 78 84, 104 86 L101 140 L59 140 Z" fill="url(#tpJacketGrad)" />
-            {/* Inner shirt / cream collar */}
-            <polygon points="73,85 80,102 87,85" fill="#e8dfce" />
-            {/* Jacket Lapels & Zipper Seam */}
-            <path d="M72 85 L79 104 L79 140" stroke="#1f3427" strokeWidth="1.6" />
-            <path d="M88 85 L81 104 L81 140" stroke="#1f3427" strokeWidth="1.6" />
-            <line x1="80" y1="104" x2="80" y2="139" stroke="#9fca8a" strokeWidth="1" strokeDasharray="2,2" />
-            {/* Chest Utility Pockets */}
-            <path d="M63 108 L73 108 L73 118 L63 118 Z" fill="#243d2c" opacity="0.75" />
-            <path d="M87 108 L97 108 L97 118 L87 118 Z" fill="#243d2c" opacity="0.75" />
-
-            {/* Left Arm: Resting across waist with wristband clearly on wrist */}
-            <g className="tp-char-arm-left">
-              {/* Left Upper Arm */}
-              <path d="M56 86 C52 98, 50 110, 52 122 L62 121 C60 110, 62 98, 65 87 Z" fill="url(#tpJacketGrad)" />
-              {/* Left Forearm */}
-              <path d="M52 122 L72 130 L71 137 L53 128 Z" fill="url(#tpJacketGrad)" />
-              {/* Left Hand */}
-              <circle cx="73" cy="133" r="5" fill="url(#tpSkinGrad)" />
-
-              {/* Wristband & Watch on Opposite Wrist */}
-              <g className="tp-char-wristband-unit">
-                <rect x="69" y="129" width="8" height="7" rx="2" fill="url(#tpLeatherGrad)" />
-                <circle cx="73" cy="132.5" r="3.2" fill="url(#tpGoldDial)" stroke="#4a2e18" strokeWidth="0.8" />
-                <circle cx="73" cy="132.5" r="1" fill="#fff" />
-              </g>
-
-              {/* Left Fingers resting naturally */}
-              <path d="M68 135 C66 138, 70 141, 74 138" stroke="#be8f6d" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-            </g>
-
-            {/* Right Arm (Independently Articulated: Upper Arm -> Forearm -> Hand) */}
-            <g className="tp-char-arm-upper-right">
-              {/* Right Upper Arm (Pivoting at Shoulder 104, 86) */}
-              <path d="M104 86 C107 98, 106 110, 102 121 L93 119 C96 110, 97 98, 95 86 Z" fill="url(#tpJacketGrad)" />
-
-              {/* Forearm & Hand Group (Pivoting at Elbow 101, 120) */}
-              <g className="tp-char-arm-forearm-right">
-                <path d="M101 120 L80 131 L82 138 L102 126 Z" fill="url(#tpJacketGrad)" />
-
-                {/* Hand Group (Pivoting at Wrist 80, 133 to adjust the wristband) */}
-                <g className="tp-char-hand-right">
-                  <ellipse cx="79" cy="133" rx="4.5" ry="4" fill="url(#tpSkinGrad)" />
-                  {/* Fingers gently gripping and adjusting the wristband */}
-                  <path d="M78 131 Q74 131 72 132" stroke="#be8f6d" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-                  <path d="M79 134 Q75 135 73 134" stroke="#be8f6d" strokeWidth="1.6" strokeLinecap="round" fill="none" />
-                </g>
-              </g>
-            </g>
-
-            {/* Neck & Head Group (Pivoting at base of neck 80, 78) */}
-            <g className="tp-char-head-group">
-              {/* Neck */}
-              <path d="M74 69 L86 69 L88 85 L72 85 Z" fill="url(#tpSkinGrad)" />
-              {/* Head / Face */}
-              <ellipse cx="80" cy="50" rx="16" ry="19" fill="url(#tpSkinGrad)" />
-              {/* Ears */}
-              <ellipse cx="64" cy="51" rx="2.5" ry="4.5" fill="#d8a37d" />
-              <ellipse cx="96" cy="51" rx="2.5" ry="4.5" fill="#d8a37d" />
-
-              {/* Eyes & Blinking Group */}
-              <g className="tp-char-eyes-group">
-                {/* Left Eye */}
-                <ellipse cx="74" cy="48" rx="2.6" ry="2.2" fill="#203024" />
-                <circle cx="74.7" cy="47.2" r="0.8" fill="#ffffff" />
-                {/* Right Eye */}
-                <ellipse cx="86" cy="48" rx="2.6" ry="2.2" fill="#203024" />
-                <circle cx="86.7" cy="47.2" r="0.8" fill="#ffffff" />
-                {/* Animated Eyelids */}
-                <g className="tp-char-eyelids">
-                  <rect x="70" y="44" width="8" height="6" fill="url(#tpSkinGrad)" />
-                  <rect x="82" y="44" width="8" height="6" fill="url(#tpSkinGrad)" />
-                </g>
-              </g>
-
-              {/* Eyebrows */}
-              <path d="M71 44 Q74 42 77 44" stroke="#33241b" strokeWidth="1.3" strokeLinecap="round" fill="none" />
-              <path d="M83 44 Q86 42 89 44" stroke="#33241b" strokeWidth="1.3" strokeLinecap="round" fill="none" />
-              {/* Nose */}
-              <path d="M79 48 L79 53 L82 54" stroke="#c08c69" strokeWidth="1.2" strokeLinecap="round" fill="none" />
-              {/* Friendly Patient Mouth */}
-              <path d="M76 59 Q80 62 84 59" stroke="#9c563e" strokeWidth="1.4" strokeLinecap="round" fill="none" />
-
-              {/* Hair */}
-              <path d="M64 45 C63 32, 75 27, 85 28 C96 29, 98 38, 97 45 C96 42, 92 38, 88 38 C80 38, 77 42, 73 42 C69 42, 66 44, 64 45 Z" fill="url(#tpHairGrad)" />
-              {/* Hair strands */}
-              <path d="M67 36 Q75 30 84 32" stroke="#5a3d2c" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-              <path d="M78 33 Q87 32 94 37" stroke="#5a3d2c" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-              <path d="M63 45 Q62 52 65 55" stroke="#33241b" strokeWidth="2" strokeLinecap="round" fill="none" />
+        {/* adjusting arm: upper > forearm > hand (image left), drawn on top */}
+        <g className="tp-waiting-player-a2u">
+          <rect x="87" y="126" width="26" height="72" rx="13" fill="#c58a63"/>
+          <path d="M85 126 Q100 117 115 128 L116 168 Q100 175 84 168 Z" fill="#365b3d"/>
+          <path d="M84 168 Q100 175 116 168" stroke="#f3ead2" strokeWidth="3" fill="none"/>
+          <g className="tp-waiting-player-a2f">
+            <rect x="90" y="190" width="20" height="62" rx="10" fill="#c58a63"/>
+            <rect x="89" y="234" width="22" height="13" rx="3" fill="#14171b"/>
+            <g className="tp-waiting-player-a2h">
+              <path d="M91 248 h18 v10 q0 10 -9 10 q-9 0 -9 -10 z" fill="#c58a63"/>
+              <ellipse cx="111" cy="256" rx="4" ry="7" fill="#c58a63"/>
+              <path d="M95 258 v7 M100 259 v8 M105 258 v7" stroke="#9c6544" strokeWidth="1.4" strokeLinecap="round"/>
             </g>
           </g>
         </g>
+
+        {/* Pose props live on their own layers and never participate in scoring. */}
+        <g className="tp-waiting-player-prop tp-prop-search-coin"><circle cx="126" cy="399" r="8" fill="#d8b25a"/><circle cx="126" cy="399" r="5.5" fill="#f6f1e1"/><path d="M126 396v6m-2-3h4" stroke="#8a6b26" strokeWidth="1.3"/></g>
+        <g className="tp-waiting-player-prop tp-prop-coin-burst"><circle cx="130" cy="202" r="7" fill="#d8b25a"/><circle cx="168" cy="194" r="6" fill="#f6f1e1"/><circle cx="184" cy="218" r="7" fill="#d8b25a"/><path d="M130 198v8m-3-4h6M168 191v6m-3-3h6M184 214v8m-3-4h6" stroke="#8a6b26" strokeWidth="1.3"/></g>
+        <g className="tp-waiting-player-prop tp-prop-shovel"><path d="M204 238 L143 364" stroke="#8b633b" strokeWidth="7" strokeLinecap="round"/><path d="M136 356 Q124 381 142 390 Q158 379 149 359 Z" fill="#aab2a0" stroke="#536051" strokeWidth="2"/></g>
+        <g className="tp-waiting-player-prop tp-prop-map"><path d="M103 203 L132 195 L160 203 L190 194 L190 238 L160 247 L132 239 L103 247 Z" fill="#ead9a0" stroke="#8d7540" strokeWidth="2"/><path d="M132 195v44m28-36v44M112 220q11-12 18-2t18 1" fill="none" stroke="#9d7545" strokeWidth="2"/><path d="M158 218l5-7 5 7" fill="none" stroke="#a6493a" strokeWidth="2"/></g>
+        <g className="tp-waiting-player-prop tp-prop-trap"><path d="M126 400h48M136 393l10 7-10 7m28-14-10 7 10 7" fill="none" stroke="#d8b25a" strokeWidth="4" strokeLinecap="round"/><circle cx="150" cy="399" r="4" fill="#f6f1e1"/></g>
+        <g className="tp-waiting-player-prop tp-prop-shield"><path d="M177 136l19 7v17q-4 14-19 21-15-7-19-21v-17z" fill="#d8b25a" stroke="#f6f1e1" strokeWidth="3"/><path d="m168 157 6 6 12-14" fill="none" stroke="#294a34" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/></g>
+        <g className="tp-waiting-player-prop tp-prop-dirt"><circle cx="118" cy="390" r="4" fill="#b57b55"/><circle cx="183" cy="382" r="3" fill="#a8794b"/><circle cx="164" cy="395" r="2.5" fill="#d6ae88"/></g>
+
+      </g></g>
+
+      {/* thought bubble */}
+      <g className="tp-waiting-player-th">
+        <circle cx="190" cy="57" r="4" fill="#f4efdc"/><circle cx="183" cy="66" r="2.6" fill="#f4efdc"/>
+        <rect x="196" y="8" width="84" height="40" rx="20" fill="#f4efdc"/>
+        <circle className="tp-waiting-player-dot" cx="220" cy="28" r="4.5" fill="#1d3a2c"/>
+        <circle className="tp-waiting-player-dot tp-waiting-player-d2" cx="238" cy="28" r="4.5" fill="#1d3a2c"/>
+        <circle className="tp-waiting-player-dot tp-waiting-player-d3" cx="256" cy="28" r="4.5" fill="#1d3a2c"/>
+      </g>
       </svg>
     </div>
   );
-}
+});
 
-// ---------------------------------------------------------------------------
 // Improved AnimatedWaiting component (Move-submitted state)
 // ---------------------------------------------------------------------------
 
@@ -581,7 +525,7 @@ export function AnimatedWaiting({ action, missing, total, submittedCount, allSub
         )}
 
         {/* Realistic Human Waiting Character */}
-        <RealisticWaitingCharacter reduced={reduced} className="tp-human-waiting-mini" />
+        <RealisticWaitingCharacter reduced={reduced} active={!allSubmitted} className="tp-human-waiting-mini" />
 
         {/* Floating 3D glowing treasure chest */}
         <div className="tp-waiting-chest-3d">
@@ -698,7 +642,7 @@ export function LobbyWaitingAnimation({ enough, allReady, host, count = 1 }) {
     <div className="tp-lobby-waiting-card" role="status" aria-live="polite">
       {/* Natural, human-like waiting character beside the lobby message */}
       <div className="tp-lobby-character-col">
-        <RealisticWaitingCharacter reduced={reduced} />
+        <RealisticWaitingCharacter reduced={reduced} active={!enough && !allReady} />
       </div>
 
       <div className="tp-lobby-waiting-content">

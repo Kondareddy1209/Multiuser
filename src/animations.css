@@ -952,243 +952,172 @@
 }
 
 
-/* ------------------------------------------------------------------
-   8. REALISTIC HUMAN WAITING CHARACTER & RESOLVING CARD
-   Polished game asset with stylized realism, subtle weight shifting,
-   natural breathing through torso/shoulders, and wristband adjustment.
-   ------------------------------------------------------------------ */
+/* Compact container for the supplied, inline animated SVG. */
+.tp-human-character-container { position: relative; width: 104px; height: 162px; display: flex; align-items: center; justify-content: center; flex: 0 0 104px; user-select: none; }
+.tp-human-waiting-mini { width: 82px; height: 128px; flex: 0 0 82px; margin-right: 14px; }
+.tp-waiting-player-svg { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 6px 16px rgba(0,0,0,.45)); }
 
-.tp-human-character-container {
-  position: relative;
-  width: 104px;
-  height: 162px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 104px;
-  user-select: none;
-}
+/* Loop length: change --t to speed up / slow down the whole sequence */
+.tp-waiting-player-svg{--t:9s}
+.tp-waiting-player-svg *{transform-box:view-box}
+/* pivots (SVG units) */
+.tp-waiting-player-svg .tp-waiting-player-breath,.tp-waiting-player-svg .tp-waiting-player-sigh{transform-origin:150px 262px}
+.tp-waiting-player-svg .tp-waiting-player-a1u{transform-origin:200px 136px;transform:rotate(-4deg)}
+.tp-waiting-player-svg .tp-waiting-player-a1f{transform-origin:200px 198px;transform:rotate(4deg)}
+.tp-waiting-player-svg .tp-waiting-player-a1h{transform-origin:200px 250px}
+.tp-waiting-player-svg .tp-waiting-player-a2u{transform-origin:100px 136px;transform:rotate(4deg)}
+.tp-waiting-player-svg .tp-waiting-player-a2f{transform-origin:100px 198px;transform:rotate(-4deg)}
+.tp-waiting-player-svg .tp-waiting-player-a2h{transform-origin:100px 250px}
+.tp-waiting-player-svg .tp-waiting-player-hd{transform-origin:150px 112px}
+.tp-waiting-player-svg .tp-waiting-player-bl{transform-origin:150px 88px}
+.tp-waiting-player-svg .tp-waiting-player-mo{transform-origin:150px 104px}
+.tp-waiting-player-svg .tp-waiting-player-fo{transform-origin:156px 430px}
+.tp-waiting-player-svg .tp-waiting-player-tk{transform-origin:200px 238px}
+.tp-waiting-player-svg .tp-waiting-player-th{transform-origin:196px 56px;opacity:0}
+.tp-waiting-player-svg .tp-waiting-player-leg-back{transform-origin:128px 252px}
+.tp-waiting-player-svg .tp-waiting-player-leg-front{transform-origin:172px 252px}
+.tp-waiting-player-svg .tp-waiting-player-prop{opacity:0;transform-box:view-box}
+.tp-waiting-player-svg .tp-prop-search-coin{transform-origin:126px 399px}
+.tp-waiting-player-svg .tp-prop-coin-burst{transform-origin:150px 210px}
+.tp-waiting-player-svg .tp-prop-shovel{transform-origin:150px 365px}
+.tp-waiting-player-svg .tp-prop-map{transform-origin:150px 220px}
+.tp-waiting-player-svg .tp-prop-trap{transform-origin:150px 399px}
+.tp-waiting-player-svg .tp-prop-shield{transform-origin:177px 158px}
+.tp-waiting-player-svg .tp-prop-dirt{transform-origin:150px 390px}
 
-/* Compact variation for in-game move submission */
-.tp-human-waiting-mini {
-  width: 82px;
-  height: 128px;
-  flex: 0 0 82px;
-  margin-right: 14px;
-}
+/* each body part has its own animation */
+.tp-waiting-player-svg.is-active .tp-waiting-player-breath{animation:tp-waiting-player-breath 4s ease-in-out infinite}
+.tp-waiting-player-svg.is-active .tp-waiting-player-sigh{animation:tp-waiting-player-sigh var(--t) ease-in-out infinite}
+.tp-waiting-player-svg.is-active .tp-waiting-player-a1u{animation:tp-waiting-player-a1u var(--t) ease-in-out infinite}
+.tp-waiting-player-svg.is-active .tp-waiting-player-a1f{animation:tp-waiting-player-a1f var(--t) ease-in-out infinite}
+.tp-waiting-player-svg.is-active .tp-waiting-player-a1h{animation:tp-waiting-player-a1h var(--t) ease-in-out infinite}
+.tp-waiting-player-svg.is-active .tp-waiting-player-a2u{animation:tp-waiting-player-a2u var(--t) ease-in-out infinite}
+.tp-waiting-player-svg.is-active .tp-waiting-player-a2f{animation:tp-waiting-player-a2f var(--t) ease-in-out infinite}
+.tp-waiting-player-svg.is-active .tp-waiting-player-a2h{animation:tp-waiting-player-a2h var(--t) ease-in-out infinite}
+.tp-waiting-player-svg.is-active .tp-waiting-player-hd{animation:tp-waiting-player-hd var(--t) ease-in-out infinite}
+.tp-waiting-player-svg.is-active .tp-waiting-player-fc{animation:tp-waiting-player-fc var(--t) ease-in-out infinite}
+.tp-waiting-player-svg.is-active .tp-waiting-player-pu{animation:tp-waiting-player-pu var(--t) ease-in-out infinite}
+.tp-waiting-player-svg.is-active .tp-waiting-player-bl{animation:tp-waiting-player-bl var(--t) ease-in-out infinite}
+.tp-waiting-player-svg.is-active .tp-waiting-player-br{animation:tp-waiting-player-br var(--t) ease-in-out infinite}
+.tp-waiting-player-svg.is-active .tp-waiting-player-mo{animation:tp-waiting-player-mo var(--t) ease-in-out infinite}
+.tp-waiting-player-svg.is-active .tp-waiting-player-fo{animation:tp-waiting-player-fo var(--t) ease-in-out infinite}
+.tp-waiting-player-svg.is-active .tp-waiting-player-th{animation:tp-waiting-player-th var(--t) ease-in-out infinite}
+.tp-waiting-player-svg.is-active .tp-waiting-player-tk{animation:tp-waiting-player-tk 60s steps(60,end) infinite}
+.tp-waiting-player-svg.is-active .tp-waiting-player-dot{animation:tp-waiting-player-dot 1.2s ease-in-out infinite}
+.tp-waiting-player-svg .tp-waiting-player-d2{animation-delay:.2s}.tp-waiting-player-svg .tp-waiting-player-d3{animation-delay:.4s}
 
-/* Ambient ground shadow beneath boots */
-.tp-human-ground-shadow {
-  position: absolute;
-  bottom: 2px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 72px;
-  height: 10px;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at center, rgba(5, 15, 9, 0.75) 0%, rgba(5, 15, 9, 0.3) 60%, transparent 100%);
-  filter: blur(2.5px);
-  pointer-events: none;
-  animation: tp-human-shadow-pulse 4.4s ease-in-out infinite;
-}
+@keyframes tp-waiting-player-breath{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(-.8px) scaleY(1.014)}}
+@keyframes tp-waiting-player-sigh{0%,86%{transform:translateY(0) scaleY(1)}90%{transform:translateY(-3px) scaleY(1.025)}95%{transform:translateY(2px) scaleY(.985)}100%{transform:translateY(0) scaleY(1)}}
 
-.tp-human-waiting-mini .tp-human-ground-shadow {
-  width: 56px;
-  height: 8px;
-  bottom: 1px;
-}
+/* watch arm (right side of image) */
+@keyframes tp-waiting-player-a1u{0%,8%{transform:rotate(-4deg)}20%,74%{transform:rotate(-8deg)}88%,100%{transform:rotate(-4deg)}}
+@keyframes tp-waiting-player-a1f{0%,8%{transform:rotate(4deg)}22%{transform:rotate(108deg)}34%{transform:rotate(106deg)}44%{transform:rotate(109deg)}54%{transform:rotate(107deg)}74%{transform:rotate(108deg)}88%,100%{transform:rotate(4deg)}}
+@keyframes tp-waiting-player-a1h{0%,22%{transform:rotate(0)}30%{transform:rotate(-4deg)}40%{transform:rotate(3deg)}50%{transform:rotate(-3deg)}58%,100%{transform:rotate(0)}}
 
-@keyframes tp-human-shadow-pulse {
-  0%, 100% {
-    transform: translateX(-50%) scale(1);
-    opacity: 0.85;
-  }
-  50% {
-    transform: translateX(-50%) scale(1.06, 0.94);
-    opacity: 0.65;
-  }
-}
+/* adjusting arm (left side of image) reaches across and rubs the wristband */
+@keyframes tp-waiting-player-a2u{0%,12%{transform:rotate(4deg)}26%,74%{transform:rotate(8deg)}88%,100%{transform:rotate(4deg)}}
+@keyframes tp-waiting-player-a2f{0%,12%{transform:rotate(-4deg)}26%{transform:rotate(-106deg)}32%{transform:rotate(-104deg)}36%{transform:rotate(-108deg)}40%{transform:rotate(-104deg)}44%{transform:rotate(-108deg)}48%{transform:rotate(-106deg)}74%{transform:rotate(-106deg)}88%,100%{transform:rotate(-4deg)}}
+@keyframes tp-waiting-player-a2h{0%,26%{transform:rotate(0)}32%{transform:rotate(6deg)}36%{transform:rotate(-7deg)}40%{transform:rotate(6deg)}44%{transform:rotate(-7deg)}48%,100%{transform:rotate(0)}}
 
-/* Vector Articulated Character */
-.tp-human-svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.45));
-}
+/* head: look down at wrist, look up, scan left, scan right, return */
+@keyframes tp-waiting-player-hd{0%,20%{transform:rotate(0) translateY(0)}28%,52%{transform:rotate(3deg) translateY(3px)}58%,64%{transform:rotate(-5deg) translateY(0)}69%,75%{transform:rotate(5deg) translateY(0)}82%,100%{transform:rotate(0) translateY(0)}}
+@keyframes tp-waiting-player-fc{0%,20%{transform:translate(0,0)}28%,52%{transform:translate(0,5px)}58%,64%{transform:translate(-5px,-1px)}69%,75%{transform:translate(5px,-1px)}82%,100%{transform:translate(0,0)}}
+@keyframes tp-waiting-player-pu{0%,20%{transform:translate(0,0)}28%,52%{transform:translate(0,1.6px)}58%,64%{transform:translate(-2.6px,-1px)}69%,75%{transform:translate(2.6px,-1px)}82%,100%{transform:translate(0,0)}}
+@keyframes tp-waiting-player-bl{0%,5%,7%,55%,57%,90%,92%,100%{transform:scaleY(1)}6%,56%,91%{transform:scaleY(.1)}}
+@keyframes tp-waiting-player-br{0%,54%{transform:translateY(0)}60%,76%{transform:translateY(-2px)}84%,100%{transform:translateY(0)}}
+@keyframes tp-waiting-player-mo{0%,87%{transform:scaleY(1)}91%{transform:scaleY(3)}96%,100%{transform:scaleY(1)}}
 
-/* 1. Subtle Weight Shifting on Root (Anchored on weight-bearing left leg) */
-.tp-char-root {
-  transform-origin: 66px 244px;
-  animation: tp-char-stance-shift 8.6s ease-in-out infinite;
-}
+/* impatient foot tap while scanning */
+@keyframes tp-waiting-player-fo{0%,60%{transform:rotate(0)}62%{transform:rotate(-7deg)}64%{transform:rotate(0)}66%{transform:rotate(-7deg)}68%,100%{transform:rotate(0)}}
 
-@keyframes tp-char-stance-shift {
-  0%, 100% {
-    transform: rotate(0deg);
-  }
-  30% {
-    transform: rotate(-0.7deg) translateX(-0.5px);
-  }
-  70% {
-    transform: rotate(0.4deg) translateX(0.5px);
-  }
-}
+/* thought bubble "..." and watch tick */
+@keyframes tp-waiting-player-th{0%,56%{opacity:0;transform:scale(.85)}62%,78%{opacity:1;transform:scale(1)}84%,100%{opacity:0;transform:scale(.85)}}
+@keyframes tp-waiting-player-dot{0%,100%{opacity:.25}40%{opacity:1}}
+@keyframes tp-waiting-player-tk{to{transform:rotate(360deg)}}
 
-/* 2. Torso Idle Breathing */
-.tp-char-torso {
-  transform-origin: 80px 145px;
-  animation: tp-char-torso-breathe 4.2s ease-in-out infinite;
-}
+/* One-shot move poses: animate articulated joints, never the SVG/root wrapper. */
+.tp-human-character-container[class*="pose-"] .tp-waiting-player-svg .tp-waiting-player-torso,
+.tp-human-character-container[class*="pose-"] .tp-waiting-player-svg .tp-waiting-player-leg-back,
+.tp-human-character-container[class*="pose-"] .tp-waiting-player-svg .tp-waiting-player-leg-front,
+.tp-human-character-container[class*="pose-"] .tp-waiting-player-svg .tp-waiting-player-hd,
+.tp-human-character-container[class*="pose-"] .tp-waiting-player-svg .tp-waiting-player-a1u,
+.tp-human-character-container[class*="pose-"] .tp-waiting-player-svg .tp-waiting-player-a1f,
+.tp-human-character-container[class*="pose-"] .tp-waiting-player-svg .tp-waiting-player-a1h,
+.tp-human-character-container[class*="pose-"] .tp-waiting-player-svg .tp-waiting-player-a2u,
+.tp-human-character-container[class*="pose-"] .tp-waiting-player-svg .tp-waiting-player-a2f,
+.tp-human-character-container[class*="pose-"] .tp-waiting-player-svg .tp-waiting-player-a2h { animation-duration:1.4s; animation-timing-function:ease-in-out; animation-fill-mode:both; }
+.tp-human-character-container.pose-search .tp-waiting-player-hd{animation:tp-pose-search-head 1.4s ease-in-out both}
+.tp-human-character-container.pose-search .tp-waiting-player-a2u{animation:tp-pose-search-upper 1.4s ease-in-out both}
+.tp-human-character-container.pose-search .tp-waiting-player-a2f{animation:tp-pose-search-fore 1.4s ease-in-out both}
+.tp-human-character-container.pose-search .tp-waiting-player-a2h{animation:tp-pose-search-hand 1.4s ease-in-out both}
+.tp-human-character-container.pose-search .tp-prop-search-coin{animation:tp-pose-prop 1.4s ease-in-out both}
+.tp-human-character-container.pose-steal .tp-waiting-player-hd{animation:tp-pose-steal-head 1.4s ease-in-out both}
+.tp-human-character-container.pose-steal .tp-waiting-player-a2u{animation:tp-pose-steal-upper 1.4s ease-in-out both}
+.tp-human-character-container.pose-steal .tp-waiting-player-a2f{animation:tp-pose-steal-fore 1.4s ease-in-out both}
+.tp-human-character-container.pose-steal .tp-waiting-player-a2h{animation:tp-pose-steal-hand 1.4s ease-in-out both}
+.tp-human-character-container.pose-trap .tp-waiting-player-torso{animation:tp-pose-trap-torso 1.4s ease-in-out both}
+.tp-human-character-container.pose-trap .tp-waiting-player-leg-back,.tp-human-character-container.pose-trap .tp-waiting-player-leg-front{animation:tp-pose-trap-knees 1.4s ease-in-out both}
+.tp-human-character-container.pose-trap .tp-waiting-player-a1u,.tp-human-character-container.pose-trap .tp-waiting-player-a2u{animation:tp-pose-trap-upper 1.4s ease-in-out both}
+.tp-human-character-container.pose-trap .tp-waiting-player-a1f,.tp-human-character-container.pose-trap .tp-waiting-player-a2f{animation:tp-pose-trap-fore 1.4s ease-in-out both}
+.tp-human-character-container.pose-trap .tp-prop-trap{animation:tp-pose-prop 1.4s ease-in-out both}
+.tp-human-character-container.pose-guard .tp-waiting-player-torso{animation:tp-pose-guard-torso 1.4s ease-in-out both}
+.tp-human-character-container.pose-guard .tp-waiting-player-a1u{animation:tp-pose-guard-upper 1.4s ease-in-out both}
+.tp-human-character-container.pose-guard .tp-waiting-player-a1f{animation:tp-pose-guard-fore 1.4s ease-in-out both}
+.tp-human-character-container.pose-guard .tp-prop-shield{animation:tp-pose-prop 1.4s ease-in-out both}
+.tp-human-character-container.pose-dig .tp-waiting-player-torso{animation:tp-pose-dig-torso 1.4s ease-in-out both}
+.tp-human-character-container.pose-dig .tp-waiting-player-a1u{animation:tp-pose-dig-upper 1.4s ease-in-out both}
+.tp-human-character-container.pose-dig .tp-waiting-player-a1f{animation:tp-pose-dig-fore 1.4s ease-in-out both}
+.tp-human-character-container.pose-dig .tp-prop-shovel{animation:tp-pose-shovel 1.4s ease-in-out both}
+.tp-human-character-container.pose-dig .tp-prop-dirt{animation:tp-pose-dirt 1.4s ease-in-out both}
+.tp-human-character-container.pose-explore .tp-waiting-player-hd{animation:tp-pose-explore-head 1.4s ease-in-out both}
+.tp-human-character-container.pose-explore .tp-waiting-player-a2u{animation:tp-pose-explore-upper 1.4s ease-in-out both}
+.tp-human-character-container.pose-explore .tp-waiting-player-a2f{animation:tp-pose-explore-fore 1.4s ease-in-out both}
+.tp-human-character-container.pose-explore .tp-waiting-player-a2h{animation:tp-pose-explore-hand 1.4s ease-in-out both}
+.tp-human-character-container.pose-explore .tp-prop-map{animation:tp-pose-map 1.4s ease-in-out both}
+.tp-human-character-container.pose-win .tp-waiting-player-a1u{animation:tp-pose-win-arm 1.4s ease-in-out both}
+.tp-human-character-container.pose-lose .tp-waiting-player-hd{animation:tp-pose-lose-head 1.4s ease-in-out both}
+.tp-human-character-container.outcome-guard-shield .tp-prop-shield{animation:tp-pose-shield .45s ease-out both}
+.tp-human-character-container.outcome-steal-blocked .tp-waiting-player-torso{animation:tp-pose-recoil .45s ease-out both}
+.tp-human-character-container.outcome-trap-sprung .tp-prop-trap{animation:tp-pose-shield .45s ease-out both}
+.tp-human-character-container.outcome-trap-reward .tp-prop-trap{animation:tp-pose-prop .45s ease-out both}
+.tp-human-character-container.outcome-dig-fail .tp-prop-dirt{animation:tp-pose-dirt .45s ease-out both}
+.tp-human-character-container.outcome-dig-win .tp-prop-coin-burst,.tp-human-character-container.outcome-explore-bonus .tp-prop-coin-burst{animation:tp-pose-prop .45s ease-out both}
+.tp-human-character-container.outcome-explore-bonus .tp-prop-map{opacity:1;transform:scaleX(1)}
+.tp-human-character-container.outcome-explore-empty .tp-waiting-player-hd,.tp-human-character-container.outcome-dig-fail .tp-waiting-player-hd{animation:tp-pose-shrug .45s ease-out both}
+@keyframes tp-pose-search-head{0%,25%{transform:rotate(0)}45%{transform:rotate(-12deg)}62%{transform:rotate(12deg)}100%{transform:rotate(0)}}
+@keyframes tp-pose-search-upper{0%,52%{transform:rotate(0)}75%,100%{transform:rotate(38deg)}}
+@keyframes tp-pose-search-fore{0%,48%{transform:rotate(0)}76%,100%{transform:rotate(-70deg)}}
+@keyframes tp-pose-search-hand{0%,72%{transform:rotate(0)}100%{transform:rotate(18deg)}}
+@keyframes tp-pose-steal-head{0%,22%,100%{transform:rotate(0)}35%{transform:rotate(12deg)}55%{transform:rotate(8deg)}}
+@keyframes tp-pose-steal-upper{0%,18%,100%{transform:rotate(0)}48%{transform:rotate(-55deg)}65%{transform:rotate(-45deg)}}
+@keyframes tp-pose-steal-fore{0%,30%,100%{transform:rotate(0)}55%{transform:rotate(-18deg)}70%{transform:rotate(12deg)}}
+@keyframes tp-pose-steal-hand{0%,56%,100%{transform:rotate(0)}66%{transform:rotate(22deg)}}
+@keyframes tp-pose-trap-torso{0%,100%{transform:translateY(0)}45%,70%{transform:translateY(14px)}}
+@keyframes tp-pose-trap-knees{0%,100%{transform:rotate(0)}45%,70%{transform:rotate(-5deg)}}
+@keyframes tp-pose-trap-upper{0%,100%{transform:rotate(0)}48%,70%{transform:rotate(30deg)}}
+@keyframes tp-pose-trap-fore{0%,100%{transform:rotate(0)}48%,70%{transform:rotate(-78deg)}}
+@keyframes tp-pose-guard-torso{0%,100%{transform:rotate(0)}40%,70%{transform:rotate(-4deg)}}
+@keyframes tp-pose-guard-upper{0%,100%{transform:rotate(0)}45%,72%{transform:rotate(-48deg)}}
+@keyframes tp-pose-guard-fore{0%,100%{transform:rotate(0)}45%,72%{transform:rotate(-82deg)}}
+@keyframes tp-pose-dig-torso{0%,100%{transform:rotate(0)}25%,46%{transform:rotate(7deg)}58%,78%{transform:rotate(-5deg)}}
+@keyframes tp-pose-dig-upper{0%,100%{transform:rotate(0)}25%,45%{transform:rotate(32deg)}58%,78%{transform:rotate(12deg)}}
+@keyframes tp-pose-dig-fore{0%,100%{transform:rotate(0)}25%,45%{transform:rotate(46deg)}58%,78%{transform:rotate(-38deg)}}
+@keyframes tp-pose-shovel{0%,100%{opacity:0;transform:rotate(0)}18%,88%{opacity:1;transform:rotate(0)}34%{transform:rotate(-18deg)}48%{transform:rotate(8deg)}66%{transform:rotate(-14deg)}80%{transform:rotate(5deg)}}
+@keyframes tp-pose-dirt{0%,20%,100%{opacity:0;transform:translateY(0)}38%,48%,68%,78%{opacity:1;transform:translateY(-8px)}}
+@keyframes tp-pose-explore-head{0%,100%{transform:rotate(0)}38%,76%{transform:rotate(8deg) translateY(4px)}}
+@keyframes tp-pose-explore-upper{0%,100%{transform:rotate(0)}35%,75%{transform:rotate(30deg)}}
+@keyframes tp-pose-explore-fore{0%,100%{transform:rotate(0)}35%,75%{transform:rotate(-38deg)}}
+@keyframes tp-pose-explore-hand{0%,100%{transform:rotate(0)}45%,68%{transform:rotate(32deg)}}
+@keyframes tp-pose-map{0%,100%{opacity:0;transform:scaleX(.2)}28%{opacity:1;transform:scaleX(.2)}48%,82%{opacity:1;transform:scaleX(1)}}
+@keyframes tp-pose-win-arm{0%,100%{transform:rotate(0)}42%,76%{transform:rotate(-40deg)}}
+@keyframes tp-pose-lose-head{0%,100%{transform:rotate(0)}32%,72%{transform:rotate(-8deg) translateY(4px)}}
+@keyframes tp-pose-shield{0%{opacity:0;transform:scale(.65)}25%,72%{opacity:1;transform:scale(1.08)}100%{opacity:0;transform:scale(.9)}}
+@keyframes tp-pose-recoil{0%,100%{transform:rotate(0)}35%{transform:rotate(7deg) translateX(-3px)}70%{transform:rotate(-2deg)}}
+@keyframes tp-pose-shrug{0%,100%{transform:rotate(0)}35%,75%{transform:rotate(-7deg) translateY(3px)}}
+@keyframes tp-pose-prop{0%,100%{opacity:0;transform:scale(.7)}35%,82%{opacity:1;transform:scale(1)}}
 
-@keyframes tp-char-torso-breathe {
-  0%, 100% {
-    transform: scale(1, 1) translateY(0);
-  }
-  50% {
-    transform: scale(1.015, 1.02) translateY(-1.5px);
-  }
-}
+/* Reduced motion is disabled below in a static resting pose. */
 
-/* 3. Head Glance: Checks if another adventurer arrived */
-.tp-char-head-group {
-  transform-origin: 80px 78px;
-  animation: tp-char-head-look 7.8s ease-in-out infinite;
-}
-
-@keyframes tp-char-head-look {
-  0%, 46% {
-    transform: rotate(0deg);
-  }
-  55% {
-    transform: rotate(5deg) translateX(1px);
-  }
-  68% {
-    transform: rotate(5deg) translateX(1px);
-  }
-  76% {
-    transform: rotate(-1deg);
-  }
-  84%, 100% {
-    transform: rotate(0deg);
-  }
-}
-
-/* 4. Natural Eyelid Blinking */
-.tp-char-eyelids {
-  transform-origin: 80px 48px;
-  animation: tp-char-blink-anim 4.6s infinite;
-}
-
-@keyframes tp-char-blink-anim {
-  0%, 93%, 97%, 100% {
-    opacity: 0;
-    transform: scaleY(0.08);
-  }
-  94.5% {
-    opacity: 1;
-    transform: scaleY(1);
-  }
-}
-
-/* 5. Right Upper Arm: Pivoting at Shoulder Joint (104, 86) */
-.tp-char-arm-upper-right {
-  transform-origin: 104px 86px;
-  animation: tp-arm-upper-adjust 7.6s cubic-bezier(0.38, 0, 0.22, 1) infinite;
-}
-
-@keyframes tp-arm-upper-adjust {
-  0%, 35%, 85%, 100% {
-    transform: rotate(0deg);
-  }
-  44% {
-    transform: rotate(-5deg) translateY(-0.8px);
-  }
-  52% {
-    transform: rotate(-7deg) translateY(-1.2px);
-  }
-  60% {
-    transform: rotate(-4.5deg) translateY(-0.8px);
-  }
-  68% {
-    transform: rotate(-6.5deg) translateY(-1px);
-  }
-  76% {
-    transform: rotate(-1.5deg);
-  }
-}
-
-/* 6. Right Forearm: Pivoting at Elbow Joint (101, 120) toward Opposite Wrist */
-.tp-char-arm-forearm-right {
-  transform-origin: 101px 120px;
-  animation: tp-arm-forearm-adjust 7.6s cubic-bezier(0.38, 0, 0.22, 1) infinite;
-}
-
-@keyframes tp-arm-forearm-adjust {
-  0%, 35%, 85%, 100% {
-    transform: rotate(0deg);
-  }
-  44% {
-    transform: rotate(-8deg) translateX(-2px) translateY(-3px);
-  }
-  52% {
-    transform: rotate(-13deg) translateX(-4px) translateY(-5px);
-  }
-  60% {
-    transform: rotate(-8.5deg) translateX(-2.5px) translateY(-3px);
-  }
-  68% {
-    transform: rotate(-12deg) translateX(-3.5px) translateY(-4.5px);
-  }
-  76% {
-    transform: rotate(-2.5deg) translateX(-0.5px);
-  }
-}
-
-/* 7. Right Hand: Adjusting / Tugging the Wristband at (80, 133) */
-.tp-char-hand-right {
-  transform-origin: 80px 133px;
-  animation: tp-hand-adjust 7.6s ease-in-out infinite;
-}
-
-@keyframes tp-hand-adjust {
-  0%, 35%, 85%, 100% {
-    transform: rotate(0deg);
-  }
-  48% {
-    transform: rotate(5deg) scale(1.05);
-  }
-  54% {
-    transform: rotate(-2deg) scale(0.98);
-  }
-  62% {
-    transform: rotate(6deg) scale(1.05);
-  }
-  70% {
-    transform: rotate(1deg);
-  }
-}
-
-/* 8. Wristband Reacts Gently to Finger Adjustment */
-.tp-char-wristband-unit {
-  transform-origin: 73px 132.5px;
-  animation: tp-wristband-react 7.6s ease-in-out infinite;
-}
-
-@keyframes tp-wristband-react {
-  0%, 48%, 74%, 100% {
-    transform: scale(1);
-  }
-  53% {
-    transform: scale(1.08) rotate(-1deg);
-  }
-  61% {
-    transform: scale(1.04) rotate(0.5deg);
-  }
-}
-
-/* Subtle progress indicator without countdown */
 .tp-waiting-progress-track {
   display: flex;
   align-items: center;
@@ -1428,15 +1357,8 @@
    Disables continuous loops, particles, and rapid transitions.
    ------------------------------------------------------------------ */
 @media (prefers-reduced-motion: reduce) {
-  .tp-human-ground-shadow,
-  .tp-char-root,
-  .tp-char-torso,
-  .tp-char-head-group,
-  .tp-char-eyelids,
-  .tp-char-arm-upper-right,
-  .tp-char-arm-forearm-right,
-  .tp-char-hand-right,
-  .tp-char-wristband-unit,
+  .tp-waiting-player-svg,
+  .tp-waiting-player-svg *,
   .tp-progress-bar-fill,
   .tp-waiting-chest-3d,
   .tp-orbit-track,
@@ -1470,3 +1392,23 @@
     transform: none !important;
   }
 }
+
+/* Compact move-reveal avatar, coin flight, and labels. */
+.tp-reveal-player{position:relative;overflow:visible;gap:7px}
+.tp-reveal-character{width:48px!important;height:74px!important;flex:0 0 48px!important;margin:0!important;filter:none}
+.tp-reveal-character .tp-waiting-player-svg{filter:none}
+.tp-reveal-player>span:nth-of-type(2){display:grid;gap:3px;min-width:0;flex:1}
+.tp-reveal-player>span:nth-of-type(2)>b{overflow:visible;white-space:nowrap}
+.tp-reveal-name{position:relative;display:inline-block}
+.tp-floating-delta{position:absolute;left:calc(100% + 5px);top:-2px;white-space:nowrap;font-size:10px;font-style:normal;animation:tp-delta-float 1.2s ease-out both}
+.tp-floating-delta.positive{color:#e4ca70}.tp-floating-delta.negative{color:#ed9b84}
+.tp-reveal-balance{position:relative;display:inline-flex;align-items:center;gap:3px;min-width:34px;color:#ead27b;font-variant-numeric:tabular-nums}
+.tp-reveal-balance>span{font-size:11px}.tp-coin-flight{position:absolute;right:0;top:-16px;z-index:2;font-style:normal;animation:tp-coin-arrive .45s ease-in-out both}
+.tp-coin-flight.spend{animation-name:tp-coin-spend}.tp-coin-flight.neutral{opacity:0}
+.reveal-settling-note{display:flex;align-items:center;justify-content:center;gap:7px;margin:10px 0;padding:9px;border:1px solid #d5b45b20;border-radius:6px;color:#cbbd84;background:#162c20;font-size:9px}
+@keyframes tp-delta-float{0%{opacity:0;transform:translateY(7px)}20%{opacity:1}100%{opacity:0;transform:translateY(-11px)}}
+@keyframes tp-coin-arrive{0%{opacity:0;transform:translate(-10px,8px) scale(.6)}60%{opacity:1;transform:translate(0,-5px) scale(1.1)}100%{opacity:0;transform:translate(0,-12px) scale(.85)}}
+@keyframes tp-coin-spend{0%{opacity:0;transform:translate(0,-12px) scale(.8)}25%{opacity:1}100%{opacity:0;transform:translate(10px,9px) scale(.6)}}
+@media (prefers-reduced-motion: reduce){.tp-human-character-container[class*="pose-"] .tp-waiting-player-svg *,.tp-floating-delta,.tp-coin-flight{animation:none!important;transition:none!important;transform:none!important}.tp-waiting-player-svg .tp-waiting-player-prop{opacity:0!important}}
+
+@media (prefers-reduced-motion: reduce) { .tp-waiting-player-svg .tp-waiting-player-th { opacity: 0 !important; } }

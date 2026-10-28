@@ -2,7 +2,7 @@
 
 [![React](https://img.shields.io/badge/React-18.3.1-blue?logo=react)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-6.0.7-646CFF?logo=vite)](https://vitejs.dev/)
-[![Tests](https://img.shields.io/badge/Tests-34%20Passed-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-55%20Passed-brightgreen)](tests/)
 [![JavaScript](https://img.shields.io/badge/ESM-JavaScript-F7DF1E?logo=javascript)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![GitHub](https://img.shields.io/badge/GitHub-Kondareddy1209%2FMultiuser-181717?logo=github)](https://github.com/Kondareddy1209/Multiuser)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-treasur--plots.netlify.app-00C7B7?logo=netlify)](https://treasur-plots.netlify.app/)

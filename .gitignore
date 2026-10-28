@@ -33,3 +33,5 @@ secrets*
 .chrome-*.log
 .roomcode-layout*
 _codex_write_check.tmp
+outputs/
+
