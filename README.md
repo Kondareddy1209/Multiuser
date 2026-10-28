@@ -4,71 +4,103 @@
 [![Vite](https://img.shields.io/badge/Vite-6.0.7-646CFF?logo=vite)](https://vitejs.dev/)
 [![Tests](https://img.shields.io/badge/Tests-55%20Passed-brightgreen)](tests/)
 [![JavaScript](https://img.shields.io/badge/ESM-JavaScript-F7DF1E?logo=javascript)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+[![Supabase](https://img.shields.io/badge/Backend-Supabase%20PostgreSQL-3ECF8E?logo=supabase)](https://supabase.com/)
 [![GitHub](https://img.shields.io/badge/GitHub-Kondareddy1209%2FMultiuser-181717?logo=github)](https://github.com/Kondareddy1209/Multiuser)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-treasur--plots.netlify.app-00C7B7?logo=netlify)](https://treasur-plots.netlify.app/)
 
-> **Live Production Game:** [https://treasur-plots.netlify.app/](https://treasur-plots.netlify.app/)
+> **Live Production Demo:** [https://treasur-plots.netlify.app/](https://treasur-plots.netlify.app/)<br />
+> **Source Repository:** [https://github.com/Kondareddy1209/Multiuser](https://github.com/Kondareddy1209/Multiuser)
 
-Treasure Plots is a real-time, browser-based multiplayer strategy and party game. Up to eight players gather in an anonymous clearing, start with five coins, and compete across three rounds of simultaneous secret decisions. 
+Treasure Plots is a real-time, browser-based multiplayer strategy and party game. Two to eight players gather in an anonymous clearing, start with five coins each, and compete across three rounds of simultaneous secret decisions.
 
-Players can quietly search for treasure, target rivals with thefts, protect their stash with traps or shields, or take risky expeditions into the deep woods. All moves remain hidden in the database until the round closes, resolving together in a single deterministic sequence.
+Players can quietly search for treasure, target rivals with thefts, protect their stash with traps or shields, or venture into the deep woods on risky expeditions. All decisions remain shielded by database-level security until every player has committed, resolving simultaneously in a single, deterministic sequence.
+
+*Note: This is an independent personal software project built to explore real-time multiplayer state synchronization, transactional database state machines, and responsive CSS/SVG animation systems.*
 
 ---
 
 ## Table of Contents
 
-- [Features](#features)
-- [Game Rules](#game-rules)
+- [Visual Presentation](#visual-presentation)
+  - [Screenshots](#screenshots)
+- [Key Features](#key-features)
+- [Game Rules & Mechanics](#game-rules--mechanics)
   - [Actions Overview](#actions-overview)
   - [Action Details](#action-details)
-  - [Simultaneous Resolution Sequence](#simultaneous-resolution-sequence)
-  - [Winning the Game](#winning-the-game)
-- [Tech Stack](#tech-stack)
-- [Getting Started](#getting-started)
+  - [Atomic Resolution Order](#atomic-resolution-order)
+  - [Victory Condition](#victory-condition)
+- [Architecture & Game Flow](#architecture--game-flow)
+  - [Game Lifecycle](#game-lifecycle)
+  - [System Flowchart](#system-flowchart)
+- [Technical Challenges & Engineering Decisions](#technical-challenges--engineering-decisions)
+- [Technology Stack](#technology-stack)
+- [Project Structure](#project-structure)
+- [Local Setup & Getting Started](#local-setup--getting-started)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
-- [Environment Configuration](#environment-configuration)
-- [Testing and Build](#testing-and-build)
-- [Project Structure](#project-structure)
-- [Database Setup](#database-setup)
-  - [Supabase Prerequisites](#supabase-prerequisites)
-  - [Applying Migrations](#applying-migrations)
-- [Security](#security)
-- [Deployment](#deployment)
-- [Contributing](#contributing)
-- [License](#license)
+  - [Environment Variables](#environment-variables)
+  - [Database Configuration & Migrations](#database-configuration--migrations)
+  - [Starting the Development Server](#starting-the-development-server)
+- [Testing & Quality Verification](#testing--quality-verification)
+  - [Running the Test Suite](#running-the-test-suite)
+  - [Production Build Verification](#production-build-verification)
+  - [Test Suite Breakdown](#test-suite-breakdown)
+- [Deployment Configuration](#deployment-configuration)
+- [Future Enhancements](#future-enhancements)
+- [License & Author](#license--author)
 
 ---
 
-## Features
+## Visual Presentation
 
-- **Anonymous Multiplayer Rooms:** Create private rooms with six-character codes or join instantly using direct invite links, clipboard copying, or native device sharing.
-- **2–8 Player Capacity:** Accommodates duels and parties of up to eight participants per room.
-- **Simultaneous Secret Decisions:** Players lock in their moves privately. Selections remain shielded by database security until all decisions are submitted or the round timer expires.
-- **Six Distinct Actions:** Choose between Search, Steal, Trap, Guard, Dig Deep, and Explore, balancing guaranteed gains, defenses, and calculated risks.
-- **Lobby Readiness Flow:** Room creators are automatically marked ready, while guests review field rules and confirm readiness before the host can launch the game.
-- **Multi-Thief Allocation:** Deterministic, proportional split algorithm with order-based remainder distribution when multiple players target the same rival.
-- **Resilient State & Reconnects:** Submitted moves survive network interruptions. Unsubmitted disconnected players are granted a 90-second grace window before the round resolves without them.
-- **Supabase-Backed State Machine:** PostgreSQL transactional RPCs handle room creation, validation, move execution, coin conservation, and game progression without client-side state manipulation.
-- **Live Sync & Polling Fallback:** Subscribes to Supabase Realtime channels (`postgres_changes`) on rooms, players, and round results, reinforced with an automatic 2.8-second polling heartbeat.
-- **Rematch Support:** Host can reset rounds, coin totals, and readiness states for consecutive games within the same room.
+### Character & Atmosphere Concept
+The game features a custom visual aesthetic inspired by forest expeditions. Below is the character artwork that serves as the visual reference for the in-game animated adventurer:
+
+<p align="center">
+  <img src="public/adventurer_waiting.jpg" alt="Treasure Plots Adventurer Concept" width="420" />
+</p>
+
+### Screenshots
+
+| Game entry — create a room or join with a code | Multiplayer waiting — move locked in |
+|:---:|:---:|
+| ![Treasure Plots entry screen](docs/screenshots/game-lobby.png) | ![Animated adventurer waiting while other players decide](docs/screenshots/waiting-animation.png) |
+| *Landing screen: "Gather your crew" with create/join flow* | *Move locked in; animated adventurer waits for rivals* |
+
+| Round reveal and move selection | Expedition lobby waiting for players |
+|:---:|:---:|
+| ![Round 1 reveal with coin outcomes and move selection](docs/screenshots/round-results.png) | ![Lobby with watch-check animation](docs/screenshots/waiting-lobby.png) |
+| *Round 1 results (Alder +2 · Birch −1) and move picker for Round 2* | *Pre-game lobby with watch-check animation* |
 
 ---
 
-## Game Rules
+## Key Features
 
-Each player begins the match with **5 coins** and competes over **3 rounds**.
+- **Anonymous Multiplayer Rooms:** Create private rooms with random 6-character codes or join instantly using direct URL invite links (`?room=CODE`) with native clipboard and device sharing support.
+- **2 to 8 Player Capacity:** Seamlessly supports duels as well as party matches of up to eight players per room.
+- **Player Readiness Verification:** Hosts are automatically marked ready upon room creation; joiners review game rules and confirm readiness before the host can launch the match.
+- **Six Balanced Action Cards:** Choose between guaranteed gains (Search), targeted rivalry (Steal), counter-offenses (Trap), total defense (Guard), and calculated gambles (Dig Deep, Explore).
+- **Simultaneous Secret Decisions:** Players lock in their moves independently. Submissions remain hidden by PostgreSQL Row Level Security (RLS) until all players submit or the disconnect window expires.
+- **Deterministic Multi-Thief Allocation:** Proportional distribution algorithm with stable remainder assignment when multiple players attempt to steal from the same target simultaneously.
+- **Resilient Reconnects & Rematches:** Submitted choices persist across page reloads. A 90-second grace window protects disconnected players before resolving without them. Hosts can trigger instant room rematches.
+- **Articulated Waiting & Reveal Animations:** Custom inline SVG character featuring namespaced CSS keyframes, step-by-step reveal pacing, and full support for `prefers-reduced-motion`.
+
+---
+
+## Game Rules & Mechanics
+
+Each player starts the match with **5 coins** and competes over **3 rounds**.
 
 ### Actions Overview
 
 | Action | Cost | Base Gain | Requirements & Mechanics | Net Outcome |
 | :--- | :---: | :---: | :--- | :---: |
-| **Search** | 0 | +2 | No target required. Safe baseline coin gain. | **+2** |
-| **Steal** | 0 | Up to +2 | Must target a rival in the room. Deducts up to 2 coins from target. Blocked by Trap and Guard. | **0 to +2** |
-| **Trap** | 1 | 0 | Blocks all incoming steals against you. Each thief loses up to 2 coins. Sprung trap awards setter +2 once. | **-1** (unattacked)<br>**+1** (sprung) |
-| **Guard** | 1 | 0 | Blocks all incoming steals against you. No thief penalty or setter bonus. | **-1** |
-| **Dig Deep** | 1 | 0 / +4 | 50% chance to discover treasure and gain 4 coins; otherwise lose the 1 coin cost. | **-1** (fail)<br>**+3** (success) |
-| **Explore** | 1 | +1 | Guarantees 1 coin back, with a 50% chance to find an additional 2 coins. | **0** (fail)<br>**+2** (success) |
+| **Search** | `0` | `+2` | No target required. Safe baseline coin gain. | **+2 coins** |
+| **Steal** | `0` | Up to `+2` | Must target a rival. Deducts up to 2 coins from target. Blocked by Trap and Guard. | **0 to +2 coins** |
+| **Trap** | `1` | `0` | Blocks all incoming steals. Each thief loses up to 2 coins. Sprung trap awards setter +2 once. | **-1 coin** (unattacked)<br>**+1 coin** (sprung) |
+| **Guard** | `1` | `0` | Blocks all incoming steals for the round. No thief penalty or counter bonus. | **-1 coin** |
+| **Dig Deep** | `1` | `0` / `+4` | 50% chance to find treasure and gain 4 coins; otherwise forfeit the 1 coin cost. | **-1 coin** (fail)<br>**+3 coins** (success) |
+| **Explore** | `1` | `+1` | Guarantees 1 coin back, with a 50% chance to discover an extra 2 coins. | **0 coins** (fail)<br>**+2 coins** (success) |
 
 ---
 
@@ -77,80 +109,190 @@ Each player begins the match with **5 coins** and competes over **3 rounds**.
 #### Search
 - **Cost:** `0 coins`
 - **Net:** `+2 coins`
-- The safest action in the forest. Yields two guaranteed coins without targeting any player or risking counter-attacks.
+- The foundational risk-free action. Grants two guaranteed coins without targeting any player or exposing yourself to counter-defenses.
 
 #### Steal
 - **Cost:** `0 coins`
 - **Net:** `0 to +2 coins`
 - Targets a selected rival to siphon up to two coins from their current balance.
 - **Multi-Thief Allocation:** When multiple thieves target the same player:
-  1. The total transferable pool is capped at `min(target_balance, 2 * thief_count)`.
+  1. The transferable pool is capped at `min(target_balance, 2 * thief_count)`.
   2. Each thief receives `floor(pool / thief_count)`.
-  3. Any remainder coins are awarded one by one to thieves ordered by a deterministic hash (`md5(player_id || round_no)`).
-  4. Targets are never driven below zero coins.
+  3. Any remainder coins are distributed one by one based on deterministic ordering.
+  4. Target balances are strictly protected from falling below zero.
 
 #### Trap
-- **Cost:** `1 coin` (requires at least 1 coin)
-- **Net:** `-1 coin` if unattacked; `+1 coin` if sprung
-- Sets a defensive counter-measure. Blocks every steal attempt targeting the setter this round.
-- **Thief Penalty:** Each thief attempting to steal from a trapped player loses up to 2 coins (capped at their current balance).
-- **Setter Bonus:** If one or more thieves attempt to steal, the setter is awarded a one-time +2 coin bonus.
+- **Cost:** `1 coin` (requires at least 1 coin balance)
+- **Net:** `-1 coin` if unattacked; `+1 coin` if sprung (`-1 cost + 2 bonus`)
+- Sets a defensive counter-measure. Blocks all incoming steals aimed at the player for that round.
+- **Attacker Penalty:** Each thief attempting to steal from a trapped player loses up to 2 coins (capped at their current balance).
+- **Setter Bonus:** If one or more thieves attempt to steal, the setter earns a one-time +2 coin reward regardless of the number of attackers.
 
 #### Guard
-- **Cost:** `1 coin` (requires at least 1 coin)
+- **Cost:** `1 coin` (requires at least 1 coin balance)
 - **Net:** `-1 coin`
-- Raises a protective shield. Blocks all incoming steals aimed at the player for the round. Unlike Trap, Guard inflicts no penalty on thieves and awards no counter bonus.
+- Raises a protective shield blocking all incoming steals for the round. Unlike Trap, Guard inflicts no penalty on attacking thieves and provides no counter bonus.
 
 #### Dig Deep
-- **Cost:** `1 coin` (requires at least 1 coin)
+- **Cost:** `1 coin` (requires at least 1 coin balance)
 - **Net:** `-1 coin` on failure; `+3 coins` on success
-- A high-risk, high-reward expedition. A server-generated random roll provides a 50% chance to excavate a cache of 4 coins (yielding a net profit of +3 coins after paying the cost).
+- A high-stakes expedition. An authoritative server roll gives a 50% chance to unearth 4 coins (yielding a net profit of +3 coins after paying the cost).
 
 #### Explore
-- **Cost:** `1 coin` (requires at least 1 coin)
+- **Cost:** `1 coin` (requires at least 1 coin balance)
 - **Net:** `0 coins` on failure; `+2 coins` on success
-- A cautious survey of the woods. The player immediately recuperates the 1 coin expenditure, and a 50% server roll determines whether an extra 2 coins are uncovered.
+- A cautious survey of the woods. The player immediately recuperates their 1 coin entry cost, and a 50% server roll determines whether an additional 2 coins are found.
 
 ---
 
-### Simultaneous Resolution Sequence
+### Atomic Resolution Order
 
-When all active players lock in their choices—or when the 90-second disconnect timeout expires—the round resolves atomically within a single database transaction (`resolve_round_internal`):
+When all active players lock in their moves—or when the 90-second disconnect timeout expires—the round resolves atomically within a single database transaction (`resolve_round_internal`):
 
-1. **Self-Contained Actions:** Costs and baseline gains for `search`, `trap`, `guard`, `dig_deep`, and `explore` are applied.
-2. **Trap Counters & Penalties:** Sprung traps deduct penalties from attackers first and award setter bonuses, ensuring thieves cannot spend the same coin twice or drop below zero.
-3. **Guard Blocks:** Remaining steals aimed at guarded players are neutralized.
+1. **Self-Contained Actions:** Deduct costs and credit baseline gains for `search`, `trap`, `guard`, `dig_deep`, and `explore`.
+2. **Trap Counters & Penalties:** Sprung traps deduct penalties from attackers first and credit setter bonuses. Resolving penalties prior to steals ensures thieves cannot spend coins they have already forfeited.
+3. **Guard Blocks:** Remaining steal attempts directed at guarded players are neutralized with zero coin transfer.
 4. **Steal Distribution:** Unblocked thefts deduct coins from targets and allocate spoils to thieves according to the proportional split algorithm.
-5. **Payload Persistence:** Results and updated balances are written to `round_results`, advancing the game to the next round or final victory screen.
+5. **Payload Persistence:** Round outcomes, event logs, and updated balances are written to `round_results`, advancing the game state.
 
 ---
 
-### Winning the Game
+### Victory Condition
 
 After **Round 3**, the match concludes:
-- The player holding the highest total coin count is declared the winner.
-- If two or more players share the highest coin balance, all tied leaders share the victory.
+- The player with the highest coin count is declared the winner.
+- If two or more players share the highest coin total, all tied leaders share the victory.
+- The host can initiate a rematch, resetting rounds, coin balances (back to 5), and readiness states.
 
 ---
 
-## Tech Stack
+## Architecture & Game Flow
+
+### Game Lifecycle
+
+1. **Lobby Creation & Joining:** Host creates a room; joiners connect via code or link.
+2. **Rules Confirmation & Readiness:** Host is ready by default; guests review field rules and click "Confirm Readiness".
+3. **Game Start:** Host initiates the game once at least 2 active players are marked ready.
+4. **Secret Action Submission:** Each player chooses their move privately. Submissions are written to Supabase with write-only RLS policies.
+5. **Waiting Period:** Players wait while viewing an animated character checking his watch. A 90-second grace window handles any network disconnects.
+6. **Authoritative Resolution:** The last submitting player triggers the `submit_action` RPC, which invokes `resolve_round_internal` inside a PostgreSQL transaction.
+7. **Coordinated Reveal:** Clients receive the new `round_results` record via Realtime (or the 2.8s polling heartbeat) and play a step-by-step reveal sequence.
+8. **Progression / Rematch:** Rounds advance until Round 3 concludes, displaying the final leaderboard and rematch option.
+
+### System Flowchart
+
+```mermaid
+flowchart TD
+    A[Host Creates Room] --> B[Guests Join via Code / Link]
+    B --> C[Guests Review Rules & Confirm Ready]
+    C --> D{All Players Ready? >= 2}
+    D -- No --> C
+    D -- Yes --> E[Host Starts Game]
+
+    subgraph Round Execution [Rounds 1 to 3]
+        E --> F[Players Choose Secret Moves]
+        F --> G[Submit via RPC: submit_action]
+        G --> H{All Moves Locked or 90s Timeout?}
+        H -- Waiting --> I[Animated Waiting Screen]
+        I --> H
+        H -- Complete --> J[PostgreSQL Transaction: resolve_round_internal]
+        J --> K[Atomic Execution: Traps -> Guards -> Steals -> Dice Rolls]
+        K --> L[Write round_results & Update player balances]
+        L --> M[Realtime Broadcast + 2.8s Polling Heartbeat]
+        M --> N[Client Paced Reveal Sequence & Coin Deltas]
+    end
+
+    N --> O{Current Round == 3?}
+    O -- No --> F
+    O -- Yes --> P[Final Podium Leaderboard]
+    P --> Q[Host Initiates Rematch]
+    Q --> C
+```
+
+---
+
+## Technical Challenges & Engineering Decisions
+
+### 1. Authoritative Server State vs. Client Tampering
+- **Challenge:** In peer-to-peer or client-authoritative games, clients can inspect network payloads to reveal rival choices before committing their own.
+- **Solution:** Move submissions write directly to an `actions` table configured with Row Level Security (RLS) that prohibits client SELECT queries on unrevealed moves. All random calculations (Dig Deep and Explore outcomes) and coin transfers execute inside `SECURITY DEFINER` PostgreSQL functions. Clients never calculate or dictate coin totals.
+
+### 2. Multi-Attacker Contention & Solvency
+- **Challenge:** Multiple players can target the same rival with Steal actions in the same round. If two players attempt to steal 2 coins from a rival who only has 2 coins, simple subtraction creates negative balances or creates coins out of thin air.
+- **Solution:** A deterministic proportional allocation algorithm (`splitSteal` / SQL equivalent) caps total theft at `min(target_balance, 2 * thief_count)`, divides the pool evenly, and allocates remainder coins based on stable deterministic hashing (`md5(player_id || round_no)`). Targets are mathematically guaranteed never to drop below zero.
+
+### 3. Defense Precedence Ordering
+- **Challenge:** If Player A steals from Player B (who set a Trap), Player A forfeits up to 2 coins. If Player A also stole from Player C, in what order should coins be debited?
+- **Solution:** The database transaction strictly resolves defensive Trap penalties *before* calculating outgoing theft gains. This ensures attackers cannot use newly stolen funds to pay off trap penalties.
+
+### 4. Dual-Sync Resilience (Realtime + Heartbeat Fallback)
+- **Challenge:** WebSocket connections can experience silent disconnects, missed messages, or mobile sleep throttling during multiplayer waiting phases.
+- **Solution:** The client pairs Supabase Realtime channel subscriptions (`postgres_changes` on `rooms`, `players`, and `round_results`) with an automated 2.8-second polling fallback heartbeat (`get_room` RPC). If a WebSocket packet drops, the polling loop catches the state change without user intervention.
+
+### 5. Accessible Motion & Responsive SVG Rendering
+- **Challenge:** Complex SVG character animations and stepped coin reveals can cause layout thrashing and trigger discomfort for users sensitive to motion.
+- **Solution:** The waiting adventurer is rendered as an inline SVG with lightweight, namespaced CSS keyframes that execute only when active. The reveal sequence actively queries `prefers-reduced-motion`; when detected, keyframe animations and multi-step timing are bypassed, rendering final balances and outcomes instantly.
+
+---
+
+## Technology Stack
 
 - **Client Framework:** [React 18.3.1](https://react.dev/)
-- **Build Tool & Dev Server:** [Vite 6.0.7](https://vitejs.dev/) with [@vitejs/plugin-react 4.3.4](https://github.com/vitejs/vite-plugin-react)
+- **Build Tool & Bundler:** [Vite 6.0.7](https://vitejs.dev/) with [@vitejs/plugin-react 4.3.4](https://github.com/vitejs/vite-plugin-react)
+- **Language:** JavaScript (ESM, strict syntax)
+- **Backend & Database:** [Supabase](https://supabase.com/) via [@supabase/supabase-js 2.57.0](https://github.com/supabase/supabase-js)
+- **Database Engine:** PostgreSQL 15+ (PL/pgSQL transactional stored procedures, Row Level Security, composite unique keys, advisory locks)
 - **Iconography:** [Lucide React 0.468.0](https://lucide.dev/)
-- **Backend as a Service:** [Supabase](https://supabase.com/) via [@supabase/supabase-js 2.57.0](https://github.com/supabase/supabase-js)
-- **Database Engine:** PostgreSQL 15+ (PL/pgSQL transactional RPCs, row-level security, advisory locks)
-- **Styling:** Vanilla CSS with custom tokens, fluid typography, dark mode palette, and mobile-first glassmorphism
+- **Styling:** Vanilla CSS with design system custom properties, fluid typography, dark-mode glassmorphic palette, and responsive mobile layouts
+- **Animation:** Namespaced CSS keyframes, inline SVG manipulation, and stepped JavaScript sequence controller (`src/revealSequence.js`)
 - **Testing:** Node.js native test runner (`node:test`, `node:assert/strict`)
+- **Hosting:** [Netlify](https://www.netlify.com/) static single-page application hosting
 
 ---
 
-## Getting Started
+## Project Structure
+
+```text
+Multiuser/
+├── .env.example                     # Environment variable template
+├── .gitignore                       # Git ignore rules (credentials, build artifacts, test outputs)
+├── index.html                       # SPA HTML entry point
+├── netlify.toml                     # Netlify build configuration & SPA rewrites
+├── package.json                     # Scripts and project dependencies
+├── vite.config.js                   # Vite bundler configuration
+├── public/
+│   └── adventurer_waiting.jpg       # Concept artwork asset for character design
+├── src/
+│   ├── AnimationComponents.jsx      # Articulated SVG character, waiting component, reveal rows
+│   ├── animations.css               # Namespaced CSS keyframes for character & reveal effects
+│   ├── animations.js                # Round seen tracking & motion preference utilities
+│   ├── gameRules.js                 # Action definitions, costs, multi-thief splits, winner evaluation
+│   ├── main.jsx                     # Core application views (Home, Lobby, Game, Reveal, Final)
+│   ├── readiness.js                 # Player readiness verification & readback validation
+│   ├── revealSequence.js            # Paced round reveal step builder & delta calculation
+│   ├── style.css                    # Design tokens, layout grid, typography, glassmorphism
+│   └── supabaseDiagnostics.js          # Development error logging & sensitive data redaction
+├── supabase/
+│   └── migrations/
+│       ├── 001_game.sql             # Base schema: rooms, players, actions, round_results, RPCs
+│       ├── 002_multiplayer_actions_and_readiness.sql # 6 actions, readiness state, request idempotency
+│       └── 003_reconcile_move_rpcs.sql # Composite keys reconciliation, steal model, trap ordering
+└── tests/
+    ├── animations.test.js           # Tests for seen round tracking, motion prefs, animation maps
+    ├── gameRules.test.js            # Unit & invariant tests for game rules, steal splits, and RPC logic
+    ├── readiness.test.js            # Tests for lobby readiness, UI states, and RPC safeguards
+    ├── revealSequence.test.js       # Tests for reveal sequence step generation and pose mapping
+    └── watchCheck.test.js           # Structural tests verifying SVG hierarchy and CSS keyframe scoping
+```
+
+---
+
+## Local Setup & Getting Started
 
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) v18.0.0 or higher
-- [npm](https://www.npmjs.com/) or [pnpm](https://pnpm.io/)
+- [npm](https://www.npmjs.com/) (bundled with Node.js) or [pnpm](https://pnpm.io/)
 - A free [Supabase](https://supabase.com/) project
 
 ### Installation
@@ -161,194 +303,123 @@ After **Round 3**, the match concludes:
    cd Multiuser
    ```
 
-2. **Install project dependencies:**
+2. **Install dependencies:**
    ```bash
    npm install
    # or
    pnpm install
    ```
 
-3. **Configure local environment variables:**
-   ```bash
-   cp .env.example .env.local
-   ```
-   Add your Supabase project URL and anon/publishable key to `.env.local` (see [Environment Configuration](#environment-configuration)).
+### Environment Variables
 
-4. **Launch the development server:**
-   ```bash
-   npm run dev
-   # or
-   pnpm dev
-   ```
-   Open the printed URL (typically `http://localhost:5173`) in your browser.
+Copy the template file to create `.env.local`:
 
----
+```bash
+cp .env.example .env.local
+```
 
-## Environment Configuration
-
-The application requires connection credentials to your Supabase project. Define these in `.env.local` in the project root:
+Open `.env.local` and provide your Supabase project credentials:
 
 ```env
 VITE_SUPABASE_URL=https://YOUR_PROJECT_ID.supabase.co
 VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_PUBLISHABLE_KEY
 ```
 
-> **Important:**
-> - Only supply the **browser-safe anon/publishable key**. Never expose your Supabase `service_role` secret in client-side configuration.
-> - `.env.local` is ignored by Git to prevent accidental credential leakage.
-> - A template file [`.env.example`](.env.example) is committed to the repository for reference.
+> **Security Note:** Supply only the public **anon/publishable key**. Never expose your Supabase `service_role` secret in frontend configuration.
+
+### Database Configuration & Migrations
+
+1. In the [Supabase Dashboard](https://supabase.com/dashboard), select your project.
+2. Navigate to **Authentication → Providers → Email / Password & Other Providers**.
+3. Enable **Anonymous Sign-ins** (allows players to create and join rooms without an account).
+4. Navigate to the **SQL Editor** and run the three migration scripts in order:
+   - [`supabase/migrations/001_game.sql`](supabase/migrations/001_game.sql)
+   - [`supabase/migrations/002_multiplayer_actions_and_readiness.sql`](supabase/migrations/002_multiplayer_actions_and_readiness.sql)
+   - [`supabase/migrations/003_reconcile_move_rpcs.sql`](supabase/migrations/003_reconcile_move_rpcs.sql)
+
+### Starting the Development Server
+
+```bash
+npm run dev
+# or
+pnpm dev
+```
+
+Open `http://localhost:5173` in your browser. To test multiplayer locally, open a second incognito window or alternate browser profile and join using the generated room code.
 
 ---
 
-## Testing and Build
+## Testing & Quality Verification
 
-The project includes an automated contract and regression test suite verifying game logic, RPC contracts, state machines, and concurrency invariants without requiring a live database connection.
+### Running the Test Suite
 
-### Run Tests
+The test suite runs natively in Node.js without requiring a running database or external services:
+
 ```bash
 npm test
 # or
 node --test
 ```
 
-**Test Coverage Summary:**
-- **Total Tests:** 34 passing
-- **Modules Covered:**
-  - `tests/gameRules.test.js`: Validates action definitions, costs, steal allocations, tiebreaker logic, idempotency, and regression guards.
-  - `tests/readiness.test.js`: Validates host auto-readiness, guest review mandates, live sync subscriptions, accessible UI states, and safe error redaction.
+### Production Build Verification
 
-### Production Build
+To verify that the application compiles into an optimized production bundle:
+
 ```bash
 npm run build
 ```
-Generates an optimized production bundle in the `dist/` folder.
 
-### Preview Production Build
+Preview the production build locally:
+
 ```bash
 npm run preview
 ```
 
----
+### Test Suite Breakdown
 
-## Project Structure
+All **55 tests** execute synchronously and verify the following domains:
 
-```text
-Multiuser/
-├── .env.example            # Placeholder environment variable template
-├── .gitignore              # Ignores environment files, build output, secrets, and caches
-├── index.html              # Single-page application entry HTML
-├── netlify.toml            # Netlify build and SPA routing configuration
-├── package.json            # Scripts and package dependencies
-├── vite.config.js          # Vite configuration with React plugin
-├── src/
-│   ├── gameRules.js        # Action models, coin calculations, steal distributions, winner evaluation
-│   ├── main.jsx            # Main React application, screens (Home, Lobby, Game, Reveal), state
-│   ├── readiness.js        # Player lobby readiness verification and readback validation
-│   ├── style.css           # Vanilla CSS design system, layout, animations, components
-│   └── supabaseDiagnostics.js # Error categorization and sensitive identifier redaction
-├── supabase/
-│   └── migrations/
-│       ├── 001_game.sql    # Base schema: rooms, players, actions, results, core RPCs
-│       ├── 002_multiplayer_actions_and_readiness.sql # 6 actions, readiness state, request idempotency
-│       └── 003_reconcile_move_rpcs.sql # Composite keys reconciliation, steal model, trap ordering
-└── tests/
-    ├── gameRules.test.js   # Unit & invariant tests for game rules, steal splits, and resolutions
-    └── readiness.test.js   # Contract tests for lobby readiness, UI states, and RPC safeguards
-```
+| Test File | Verified Invariants & Coverage |
+| :--- | :--- |
+| **`tests/gameRules.test.js`** | Action definitions, coin costs, net yields, steal split mathematics, remainder tiebreakers, low-balance defenses, trap penalties, guard protections, RPC parameter validation, database error 21000 handling, and winner evaluation. |
+| **`tests/readiness.test.js`** | Host auto-readiness, guest review mandates, minimum 2-player start conditions, readiness readback verification, rematch participant resets, and sensitive data redaction in diagnostics. |
+| **`tests/animations.test.js`** | Round-seen tracking to prevent animation replay, rematch state resets, `prefersReducedMotion` safety, particle scaling calculations, and result status categorization. |
+| **`tests/revealSequence.test.js`** | Step-by-step reveal event construction, authoritative delta attribution, trap reward deduplication, character pose mappings, and timing budget limits. |
+| **`tests/watchCheck.test.js`** | Inline SVG structure verification, keyframe namespacing (`tp-waiting-player-*`), active-state CSS scoping, reduced-motion overrides, and waiting message copy. |
+
+*Note: The automated test suite covers client-side state models, game rules, math invariants, and contract boundaries offline. Live multiplayer network interactions and database RPC executions are verified through live browser sessions on the deployed environment.*
 
 ---
 
-## Database Setup
+## Deployment Configuration
 
-Game state is persisted and resolved through PostgreSQL in Supabase.
+Treasure Plots is deployed as a static single-page application on Netlify:
 
-### Supabase Prerequisites
+- **Live URL:** [https://treasur-plots.netlify.app/](https://treasur-plots.netlify.app/)
+- **Build Command:** `npm run build`
+- **Publish Directory:** `dist`
+- **Routing Rules:** Handled via [`netlify.toml`](netlify.toml) (`/*` rewritten to `/index.html` with HTTP 200 for client-side routing)
 
-1. Create a project at [supabase.com](https://supabase.com).
-2. Navigate to **Authentication → Providers → Email / Password & Other Providers**.
-3. Enable **Anonymous Sign-ins** (allows players to join rooms without creating persistent accounts).
-
-### Applying Migrations
-
-Execute the migration scripts in sequential order using the **Supabase SQL Editor** or the **Supabase CLI**:
-
-1. [**`supabase/migrations/001_game.sql`**](supabase/migrations/001_game.sql):
-   - Sets up initial tables (`rooms`, `players`, `actions`, `round_results`).
-   - Enables Row Level Security (RLS) across all tables.
-   - Defines initial RPCs (`create_room`, `join_room`, `start_game`, `get_room`, `submit_action`, `heartbeat`).
-
-2. [**`supabase/migrations/002_multiplayer_actions_and_readiness.sql`**](supabase/migrations/002_multiplayer_actions_and_readiness.sql):
-   - Adds `create_request_id` to `rooms` for idempotent room creation.
-   - Adds `ready` status tracking to `players`.
-   - Expands supported actions to all six moves: `search`, `steal`, `trap`, `guard`, `dig_deep`, `explore`.
-   - Configures composite foreign keys and scoped realtime policies.
-
-3. [**`supabase/migrations/003_reconcile_move_rpcs.sql`**](supabase/migrations/003_reconcile_move_rpcs.sql):
-   - Refines `resolve_round_internal` with safe steal debit/credit validation.
-   - Enforces trap penalty resolution before steal distribution to guarantee non-negative coin balances.
-   - Adds room-scoped locks and concurrency reconciliation.
-
-> **Caution:** Always review SQL migrations before executing them against a production database.
+To deploy your own instance to Netlify:
+1. Connect your GitHub fork to Netlify.
+2. In **Site configuration → Environment variables**, add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+3. Trigger a production build.
 
 ---
 
-## Security
+## Future Enhancements
 
-- **Row Level Security (RLS):** All tables enforce RLS. Move choices submitted to `actions` have no client read policies; choices remain strictly hidden from other players until published to `round_results`.
-- **Client Privilege Isolation:** Only the public anon key is bundled in the frontend. Privileged administrative keys (`service_role`) must never be deployed to client code.
-- **Transactional Server Authority:** Coin costs, random generation (`dig_deep`, `explore`), and resolution logic execute exclusively within `SECURITY DEFINER` PostgreSQL functions. Clients cannot forge coin balances or alter game state directly.
-- **Diagnostic Redaction:** Client diagnostics in `supabaseDiagnostics.js` automatically sanitize UUIDs, room codes, and action choices before printing to console logs during development.
-- **Credential Hygiene:** Git ignore rules prevent `.env`, `.env.*`, certificates (`*.pem`, `*.key`), and secrets from being committed to source control.
+The following enhancements are planned for future iterations:
 
----
-
-## Deployment
-
-The application compiles to a static single-page application that can be hosted on any static hosting platform.
-
-### Netlify Deployment
-
-The application is deployed live to production at:
-👉 **[https://treasur-plots.netlify.app/](https://treasur-plots.netlify.app/)**
-
-The repository includes a [netlify.toml](netlify.toml) pre-configured with:
-- **Build command:** `npm run build`
-- **Publish directory:** `dist`
-- **SPA rewrite rule:** `/*` redirects to `/index.html` (HTTP 200)
-
-**Deployment Steps:**
-1. Connect your repository to Netlify.
-2. In the Netlify site dashboard, navigate to **Site configuration → Environment variables**.
-3. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
-4. Trigger a deploy.
+- **Ambient Audio & Sound Effects:** An optional audio toggle featuring atmospheric forest ambience, coin clinks on gain, and counter-defense sound effects.
+- **Customizable Room Settings:** Host options for custom round counts (e.g., 5-round matches) and adjustable starting coin balances (e.g., 3 to 10 coins).
+- **In-Game Reaction Emotes:** Quick emoji reactions in the lobby and round reveal screens to heighten party interaction without requiring full text chat.
+- **Spectator Mode:** Allow additional players beyond the 8-player cap to watch round reveals in real time.
 
 ---
 
-## Contributing
+## License & Author
 
-Contributions, bug reports, and improvements are welcome:
-
-1. **Fork the repository** on GitHub.
-2. **Create a feature branch:**
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-3. **Make your changes** and verify that all tests pass:
-   ```bash
-   npm test
-   ```
-4. **Verify the production build:**
-   ```bash
-   npm run build
-   ```
-5. **Commit your changes** with clear commit messages:
-   ```bash
-   git commit -m "Add descriptive message"
-   ```
-6. **Push to your branch and open a Pull Request.**
-
----
-
-## License
-
-No license has been specified for this project. All rights are reserved by the repository owner.
+- **Author:** [Kondareddy](https://github.com/Kondareddy1209)
+- **Project:** Personal Portfolio Project
+- **License:** All rights reserved by the repository owner.
